@@ -1,7 +1,6 @@
 ﻿using Jose;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
-using PwdLess.Auth.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +11,7 @@ namespace PwdLess.Auth.Services
 {
     public interface IAuthService
     {
-        Task FullLogin(string email);
+        Task CreateAndSendTotp(string email);
     }
 
     public class AuthService : IAuthService
@@ -28,7 +27,7 @@ namespace PwdLess.Auth.Services
             _sender = senderService;
         }
 
-        public async Task FullLogin(string email)
+        public async Task CreateAndSendTotp(string email)
         {
             var token = CreateToken(email);
             var totp = CreateTotp();

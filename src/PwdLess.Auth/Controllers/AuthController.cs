@@ -28,7 +28,7 @@ namespace PwdLess.Auth.Controllers
         {
             try
             {
-                await _authService.FullLogin(email); // generate token & totp, store in chache, send totp in email
+                await _authService.CreateAndSendTotp(email); // generate token & totp, store in chache, send totp in email
             }
             catch (Exception)
             {
@@ -39,6 +39,10 @@ namespace PwdLess.Auth.Controllers
             return Ok($"Success! Sent TOTP to: {email}");
         }
 
+        public async Task<IActionResult> TotpToToken(string totp)
+        {
+
+        }
 
         public IActionResult Echo(string echo) // for testing
         {
