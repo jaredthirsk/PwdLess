@@ -29,9 +29,19 @@ namespace PwdLess.Auth.Services
         {
             var token = CreateToken(email);
 
-            await SendTokenInUrl(token, email);
+            var token = CreateToken(email);
+            var totp = CreateTotp();
+            _totpData.Add(totp, token);
+
+            await SendTokenInUrl(totp, email);
         }
 
+        private string CreateTotp()
+        {
+            var guid = Guid.NewGuid().ToString();
+            // shorten guid according to config here
+            return guid;
+        }
 
         private string CreateToken(string sub, Dictionary<string, object> claims = null)
         {
