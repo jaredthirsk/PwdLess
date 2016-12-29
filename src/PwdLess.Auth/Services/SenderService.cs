@@ -11,21 +11,17 @@ namespace PwdLess.Auth.Services
 {
     public interface ISenderService
     {
-        string EmailSubject { get; }
-        string EmailBody { get; }
-        MailboxAddress EmailFrom { get; }
-
-        Task SendEmailAsync(string email, string tokeUrl);
+        Task SendAsync(string address, string totp);
     }
 
-    public class ConsoleTestingService : ISenderService
+    public class ConsoleEmailTestingService : ISenderService
     {
         public string EmailSubject { get; private set; }
         public string EmailBody { get; private set; }
         public MailboxAddress EmailFrom { get; private set; }
 
         private IConfigurationRoot _config;
-        public ConsoleTestingService(IConfigurationRoot config)
+        public ConsoleEmailTestingService(IConfigurationRoot config)
         {
             _config = config;
 
@@ -35,9 +31,12 @@ namespace PwdLess.Auth.Services
         }
 
 
-        public Task SendEmailAsync(string email, string tokenUrl)
+        public Task SendAsync(string email, string totp)
         {
-            EmailBody = _config["PwdLess:EmailContents:Body"].Replace("{{url}}", tokenUrl);
+            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
+
+            EmailBody = _config["PwdLess:EmailContents:Body"].Replace("{{url}}", url)
+                .Replace("{{totp}}", totp);
             Console.WriteLine($"To: {email}, From: {EmailFrom}, Subject: {EmailSubject}, Body: {EmailBody}");
             return null;
         }
@@ -60,9 +59,9 @@ namespace PwdLess.Auth.Services
         }
 
 
-        public async Task SendEmailAsync(string email, string tokenUrl)
+        public async Task SendAsync(string email, string totp)
         {
-            EmailBody = _config["PwdLess:EmailContents:Body"].Replace("{{url}}", tokenUrl);
+            ProcessTemplates(totp);
 
             var message = new MimeMessage();
             message.From.Add(EmailFrom);
@@ -96,6 +95,14 @@ namespace PwdLess.Auth.Services
                 await client.SendAsync(message);
                 client.Disconnect(true);
             }
+        }
+
+        private void ProcessTemplates(string totp)
+        {
+            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
+
+            EmailBody = _config["PwdLess:EmailContents:Body"].Replace("{{url}}", url)
+                .Replace("{{totp}}", totp);
         }
     }
 }

@@ -50,8 +50,8 @@ namespace PwdLess.Auth.Services
             var totp = GenerateTotp();
 
             await AddToCache(token, totp);
-
-            await SendTotpInUrl(totp, email);
+            
+            await _sender.SendAsync(email, totp);
         }
 
         private string CreateToken(string sub, Dictionary<string, object> claims = null)
@@ -94,14 +94,6 @@ namespace PwdLess.Auth.Services
                 {
                     SlidingExpiration = new TimeSpan(0, Int32.Parse(_config["PwdLess:Totp:Expiry"]), 0)
                 });
-        }
-
-        private async Task SendTotpInUrl(string totp, string email)
-        {
-            // generate echo url & add to tmeplate
-            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
-
-            await _sender.SendEmailAsync(email, url);
         }
 
         private long ToUnixTime(DateTime dateTime)

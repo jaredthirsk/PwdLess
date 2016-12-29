@@ -39,9 +39,9 @@ namespace PwdLess.Auth
         public void ConfigureServices(IServiceCollection services)
         {
             // Add my services
-            services.AddDistributedMemoryCache(); // can replace with AddDistrbutedRedisCache for Redis support
+            services.AddDistributedMemoryCache(); // CAN REPLACE WITH AddDistrbutedRedisCache for Redis support
             services.AddSingleton(Configuration);
-            services.AddScoped<ISenderService, EmailService>(); // REPLACE WITH EmailService
+            services.AddScoped<ISenderService, EmailService>(); // CAN REPLACE WITH ConsoleEmailTestingService
             services.AddScoped<IAuthService, AuthService>();
 
             // Add framework services.
