@@ -80,10 +80,9 @@ namespace PwdLess.Auth.Services
 
         private string GenerateTotp()
         {
-            var guid = Guid.NewGuid().ToString()
-                .Take(Int32.Parse(_config["PwdLess:Totp:Length"]))
-                .ToString();
-
+            string guid = new String(Guid.NewGuid().ToString()
+                                      .Take(Int32.Parse(_config["PwdLess:Totp:Length"]))
+                                      .ToArray());
             return guid;
         }
 
