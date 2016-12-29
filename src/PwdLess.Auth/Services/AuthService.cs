@@ -30,16 +30,26 @@ namespace PwdLess.Auth.Services
 
         public async Task<string> GetTokenFromTotp(string totp)
         {
-            var token = Encoding.UTF8.GetString(await _cache.GetAsync(totp));
-            return token;
+            byte[] token = await _cache.GetAsync(totp);
+
+            if (token != null)
+            {
+                await _cache.RemoveAsync(totp);
+
+                return Encoding.UTF8.GetString(token);
+            }
+            else
+            {
+                throw new IndexOutOfRangeException("Totp doesn't exist.");
+            }
         }
 
         public async Task CreateAndSendTotp(string email)
         {
             var token = CreateToken(email);
-            var totp = CreateTotp();
+            var totp = GenerateTotp();
 
-            await _cache.SetAsync(totp, Encoding.UTF8.GetBytes(token));
+            await AddToCache(token, totp);
 
             await SendTotpInUrl(totp, email);
         }
@@ -68,11 +78,23 @@ namespace PwdLess.Auth.Services
             return token;
         }
 
-        private string CreateTotp()
+        private string GenerateTotp()
         {
-            var guid = Guid.NewGuid().ToString();
-            // shorten guid according to config here
+            var guid = Guid.NewGuid().ToString()
+                .Take(Int32.Parse(_config["PwdLess:Totp:Length"]))
+                .ToString();
+
             return guid;
+        }
+
+        private async Task AddToCache(string token, string totp)
+        {
+            await _cache.SetAsync(totp,
+                Encoding.UTF8.GetBytes(token),
+                new DistributedCacheEntryOptions()
+                {
+                    SlidingExpiration = new TimeSpan(0, Int32.Parse(_config["PwdLess:Totp:Expiry"]), 0)
+                });
         }
 
         private async Task SendTotpInUrl(string totp, string email)

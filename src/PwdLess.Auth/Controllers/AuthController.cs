@@ -29,18 +29,30 @@ namespace PwdLess.Auth.Controllers
             try
             {
                 await _authService.CreateAndSendTotp(email); // generate token & totp, store in chache, send totp in email
+                return Ok($"Success! Sent TOTP to: {email}");
             }
             catch (Exception)
             {
                 return BadRequest("Something went wrong.");
             }
             
-
-            return Ok($"Success! Sent TOTP to: {email}");
         }
 
         public async Task<IActionResult> TotpToToken(string totp)
         {
+            try
+            {
+                var token = await _authService.GetTokenFromTotp(totp);
+                return Ok(token);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return BadRequest("TOTP not found.");
+            }
+            catch (Exception)
+            {
+                return BadRequest("Something went wrong.");
+            }
 
         }
 
