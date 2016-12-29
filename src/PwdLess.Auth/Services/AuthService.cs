@@ -35,14 +35,7 @@ namespace PwdLess.Auth.Services
 
             await _cache.SetAsync(totp, Encoding.UTF8.GetBytes(token));
 
-            await SendTokenInUrl(totp, email);
-        }
-
-        private string CreateTotp()
-        {
-            var guid = Guid.NewGuid().ToString();
-            // shorten guid according to config here
-            return guid;
+            await SendTotpInUrl(totp, email);
         }
 
         private string CreateToken(string sub, Dictionary<string, object> claims = null)
@@ -69,10 +62,17 @@ namespace PwdLess.Auth.Services
             return token;
         }
 
-        private async Task SendTokenInUrl(string token, string email)
+        private string CreateTotp()
+        {
+            var guid = Guid.NewGuid().ToString();
+            // shorten guid according to config here
+            return guid;
+        }
+
+        private async Task SendTotpInUrl(string totp, string email)
         {
             // generate echo url & add to tmeplate
-            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{token}}", token);
+            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
 
             await _sender.SendEmailAsync(email, url);
         }

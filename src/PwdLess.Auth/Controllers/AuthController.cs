@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using PwdLess.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Microsoft.Extensions.Caching.Distributed;
 
 // For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -15,16 +16,19 @@ namespace PwdLess.Auth.Controllers
     public class AuthController : Controller
     {
         private IAuthService _authService;
-        public AuthController(IAuthService authService)
+        private IDistributedCache _cache;
+
+        public AuthController(IAuthService authService, IDistributedCache cache)
         {
             _authService = authService;
+            _cache = cache;
         }
         
-        public async Task<IActionResult> SendJwt(string email)
+        public async Task<IActionResult> SendTotp(string email)
         {
             try
             {
-                await _authService.FullLogin(email); // create account, generate jwt, send in email
+                await _authService.FullLogin(email); // generate token & totp, store in chache, send totp in email
             }
             catch (Exception)
             {
@@ -32,8 +36,9 @@ namespace PwdLess.Auth.Controllers
             }
             
 
-            return Ok($"Success! Sent JWT to: {email}");
+            return Ok($"Success! Sent TOTP to: {email}");
         }
+
 
         public IActionResult Echo(string echo) // for testing
         {
