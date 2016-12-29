@@ -12,6 +12,7 @@ namespace PwdLess.Auth.Services
     public interface IAuthService
     {
         Task CreateAndSendTotp(string email);
+        Task<string> GetTokenFromTotp(string totp);
     }
 
     public class AuthService : IAuthService
@@ -25,6 +26,12 @@ namespace PwdLess.Auth.Services
             _config = config;
             _cache = cache;
             _sender = senderService;
+        }
+
+        public async Task<string> GetTokenFromTotp(string totp)
+        {
+            var token = Encoding.UTF8.GetString(await _cache.GetAsync(totp));
+            return token;
         }
 
         public async Task CreateAndSendTotp(string email)
