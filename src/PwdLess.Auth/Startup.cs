@@ -40,6 +40,7 @@ namespace PwdLess.Auth
         public void ConfigureServices(IServiceCollection services)
         {
             // Add my services
+            services.AddDistributedMemoryCache();
             services.AddSingleton(Configuration);
             services.AddScoped<ISenderService, EmailService>(); // REPLACE WITH EmailService
             services.AddScoped<IAuthService, AuthService>();

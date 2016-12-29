@@ -17,18 +17,18 @@ namespace PwdLess.Auth.Services
     public class AuthService : IAuthService
     {
         private IConfigurationRoot _config;
+        private ITotpRepository _totpData;
         private ISenderService _sender;
 
-        public AuthService(ISenderService senderService, IConfigurationRoot config)
+        public AuthService(ISenderService senderService, ITotpRepository totpRepo, IConfigurationRoot config)
         {
             _config = config;
+            _totpData = totpRepo;
             _sender = senderService;
         }
 
         public async Task FullLogin(string email)
         {
-            var token = CreateToken(email);
-
             var token = CreateToken(email);
             var totp = CreateTotp();
             _totpData.Add(totp, token);
