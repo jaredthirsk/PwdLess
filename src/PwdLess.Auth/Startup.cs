@@ -40,9 +40,7 @@ namespace PwdLess.Auth
         public void ConfigureServices(IServiceCollection services)
         {
             // Add my services
-            services.AddDbContext<UsersDbContext>(options => options.UseNpgsql(Configuration.GetConnectionString("Users")));
             services.AddSingleton(Configuration);
-            services.AddScoped<IUsersRepository, NpgsqlUsersRepository>(); // REPLACE WITH NpgsqlUsersRepository
             services.AddScoped<ISenderService, EmailService>(); // REPLACE WITH EmailService
             services.AddScoped<IAuthService, AuthService>();
 

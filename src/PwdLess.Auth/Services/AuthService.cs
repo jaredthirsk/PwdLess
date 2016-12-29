@@ -16,32 +16,22 @@ namespace PwdLess.Auth.Services
 
     public class AuthService : IAuthService
     {
-        private IUsersRepository _usersData;
         private IConfigurationRoot _config;
         private ISenderService _sender;
 
-        public AuthService(IUsersRepository usersRepository, ISenderService senderService, IConfigurationRoot config)
+        public AuthService(ISenderService senderService, IConfigurationRoot config)
         {
-            _usersData = usersRepository;
             _config = config;
             _sender = senderService;
         }
 
         public async Task FullLogin(string email)
         {
-            if (Boolean.Parse(_config["PwdLess:UseDatabase"]))
-                TryLogin(email);
-
             var token = CreateToken(email);
 
             await SendTokenInUrl(token, email);
         }
 
-        private void TryLogin(string email)
-        {
-            if (!_usersData.DoesUserExist(email))
-                _usersData.AddUser(email);    
-        }
 
         private string CreateToken(string sub, Dictionary<string, object> claims = null)
         {
