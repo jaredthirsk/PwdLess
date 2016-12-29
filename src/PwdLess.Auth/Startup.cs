@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using PwdLess.Auth.Data;
 using Microsoft.EntityFrameworkCore;
 using PwdLess.Auth.Services;
 using System.Text;
@@ -40,7 +39,7 @@ namespace PwdLess.Auth
         public void ConfigureServices(IServiceCollection services)
         {
             // Add my services
-            services.AddDistributedMemoryCache();
+            services.AddDistributedMemoryCache(); // can replace with AddDistrbutedRedisCache for Redis support
             services.AddSingleton(Configuration);
             services.AddScoped<ISenderService, EmailService>(); // REPLACE WITH EmailService
             services.AddScoped<IAuthService, AuthService>();

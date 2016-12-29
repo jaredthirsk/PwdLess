@@ -1,4 +1,5 @@
 ﻿using Jose;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using PwdLess.Auth.Data;
 using System;
@@ -17,13 +18,13 @@ namespace PwdLess.Auth.Services
     public class AuthService : IAuthService
     {
         private IConfigurationRoot _config;
-        private ITotpRepository _totpData;
+        private IDistributedCache _cache;
         private ISenderService _sender;
 
-        public AuthService(ISenderService senderService, ITotpRepository totpRepo, IConfigurationRoot config)
+        public AuthService(ISenderService senderService, IDistributedCache cache, IConfigurationRoot config)
         {
             _config = config;
-            _totpData = totpRepo;
+            _cache = cache;
             _sender = senderService;
         }
 
@@ -31,7 +32,8 @@ namespace PwdLess.Auth.Services
         {
             var token = CreateToken(email);
             var totp = CreateTotp();
-            _totpData.Add(totp, token);
+
+            await _cache.SetAsync(totp, Encoding.UTF8.GetBytes(token));
 
             await SendTokenInUrl(totp, email);
         }

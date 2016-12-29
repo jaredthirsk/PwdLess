@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using PwdLess.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using PwdLess.Auth.Data;
 
 // For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
