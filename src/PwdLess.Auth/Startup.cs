@@ -61,40 +61,6 @@ namespace PwdLess.Auth
 
             app.UseApplicationInsightsExceptionTelemetry();
 
-
-            /* VALIDATING TOKEN TO ENABLE DELETING AND UPDATING USERS
-            var tokenSecretKey = Encoding.UTF8.GetBytes(Configuration["PwdLess:Jwt:SecretKey"]);
-
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                // Token signature will be verified using a private key.
-                ValidateIssuerSigningKey = true,
-                RequireSignedTokens = true,
-                IssuerSigningKey = new SymmetricSecurityKey(tokenSecretKey),
-
-                // Token will only be valid if contains "accelist.com" for "iss" claim.
-                ValidateIssuer = true,
-                ValidIssuer = Configuration["PwdLess:Jwt:Issuer"],
-
-                // Token will only be valid if contains "accelist.com" for "aud" claim.
-                ValidateAudience = false,
-
-                // Token will only be valid if not expired yet, with 5 minutes clock skew.
-                ValidateLifetime = true,
-                RequireExpirationTime = true,
-                ClockSkew = new TimeSpan(0, 5, 0),
-
-                ValidateActor = false,
-            };
-
-            app.UseJwtBearerAuthentication(new JwtBearerOptions
-            {
-                AutomaticAuthenticate = true,
-                TokenValidationParameters = tokenValidationParameters,
-            });
-            */
-
-
             app.UseMvc();
         }
     }
