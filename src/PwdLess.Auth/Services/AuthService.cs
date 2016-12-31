@@ -100,14 +100,5 @@ namespace PwdLess.Auth.Services
             return (int)(dateTime.ToUniversalTime().Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
         }
 
-        private string TemplateProcessor(string totp)
-        {
-            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
-
-            var body = _config["PwdLess:EmailContents:Body"].Replace("{{url}}", url)
-                                                             .Replace("{{totp}}", totp);
-            return body;
-        }
-
     }
 }
