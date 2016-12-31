@@ -11,7 +11,7 @@ namespace PwdLess.Auth.Services
 {
     public interface IAuthService
     {
-        Task CreateAndSendTotp(string email);
+        Task<string> CreateAndStoreTotp(string identifier);
         Task<string> GetTokenFromTotp(string totp);
     }
 
@@ -19,13 +19,21 @@ namespace PwdLess.Auth.Services
     {
         private IConfigurationRoot _config;
         private IDistributedCache _cache;
-        private ISenderService _sender;
 
-        public AuthService(ISenderService senderService, IDistributedCache cache, IConfigurationRoot config)
+        public AuthService(IDistributedCache cache, IConfigurationRoot config)
         {
             _config = config;
             _cache = cache;
-            _sender = senderService;
+        }
+
+        public async Task<string> CreateAndStoreTotp(string identifier)
+        {
+            var token = CreateToken(identifier);
+            var totp = GenerateTotp();
+
+            await AddToCache(token, totp);
+
+            return totp;
         }
 
         public async Task<string> GetTokenFromTotp(string totp)
@@ -44,17 +52,13 @@ namespace PwdLess.Auth.Services
             }
         }
 
-        public async Task CreateAndSendTotp(string identifier)
+
+        private string GenerateTotp()
         {
-            var token = CreateToken(identifier);
-            var totp = GenerateTotp();
-
-            await AddToCache(token, totp);
-
-
-            var body = TemplateToBody(totp);
-
-            await _sender.SendAsync(identifier, body);
+            string guid = new String(Guid.NewGuid().ToString()
+                                      .Take(Int32.Parse(_config["PwdLess:Totp:Length"]))
+                                      .ToArray());
+            return guid;
         }
 
         private string CreateToken(string sub, Dictionary<string, object> claims = null)
@@ -81,14 +85,6 @@ namespace PwdLess.Auth.Services
             return token;
         }
 
-        private string GenerateTotp()
-        {
-            string guid = new String(Guid.NewGuid().ToString()
-                                      .Take(Int32.Parse(_config["PwdLess:Totp:Length"]))
-                                      .ToArray());
-            return guid;
-        }
-
         private async Task AddToCache(string token, string totp)
         {
             await _cache.SetAsync(totp,
@@ -104,7 +100,7 @@ namespace PwdLess.Auth.Services
             return (int)(dateTime.ToUniversalTime().Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
         }
 
-        private string TemplateToBody(string totp)
+        private string TemplateProcessor(string totp)
         {
             var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
 
@@ -112,7 +108,6 @@ namespace PwdLess.Auth.Services
                                                              .Replace("{{totp}}", totp);
             return body;
         }
-
 
     }
 }

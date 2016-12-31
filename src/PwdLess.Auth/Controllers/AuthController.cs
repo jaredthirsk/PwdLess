@@ -17,19 +17,27 @@ namespace PwdLess.Auth.Controllers
     {
         private IAuthService _authService;
         private IDistributedCache _cache;
+        private ISenderService _sender;
 
-        public AuthController(IAuthService authService, IDistributedCache cache)
+        public AuthController(IAuthService authService, ISenderService senderService, IDistributedCache cache)
         {
             _authService = authService;
+            _sender = senderService;
             _cache = cache;
         }
         
-        public async Task<IActionResult> SendTotp(string email)
+        public async Task<IActionResult> SendTotp(string identifier)
         {
             try
             {
-                await _authService.CreateAndSendTotp(email); // generate token & totp, store in chache, send totp in email
-                return Ok($"Success! Sent TOTP to: {email}");
+                var totp = await _authService.CreateAndStoreTotp(identifier); // generate token & totp, store in chache, send totp in email
+
+
+                var body = _authService.TemplateProcessor(totp); // TODO: move to class
+
+                await _sender.SendAsync(identifier, body);
+
+                return Ok($"Success! Sent TOTP to: {identifier}");
             }
             catch (Exception)
             {

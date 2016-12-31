@@ -22,7 +22,6 @@ namespace PwdLess.Auth.Services
             _config = config;
         }
 
-
         public Task SendAsync(string address, string body)
         {
             Console.WriteLine($"To: {address}, From: {new MailboxAddress(_config["PwdLess:EmailAuth:From"])}, Subject: {_config["PwdLess:EmailContents:Subject"]}, Body: {body}");
@@ -36,9 +35,8 @@ namespace PwdLess.Auth.Services
         public EmailService(IConfigurationRoot config)
         {
             _config = config;
-
         }
-
+    
 
         public async Task SendAsync(string address, string body)
         {
