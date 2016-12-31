@@ -16,13 +16,18 @@ namespace PwdLess.Auth.Controllers
     public class AuthController : Controller
     {
         private IAuthService _authService;
-        private IDistributedCache _cache;
         private ISenderService _sender;
+        private ITemplateProcessor _templateProcessor;
+        private IDistributedCache _cache;
 
-        public AuthController(IAuthService authService, ISenderService senderService, IDistributedCache cache)
+        public AuthController(IAuthService authService, 
+            ISenderService senderService, 
+            ITemplateProcessor templateProcessor, 
+            IDistributedCache cache)
         {
             _authService = authService;
             _sender = senderService;
+            _templateProcessor = templateProcessor;
             _cache = cache;
         }
         
@@ -33,7 +38,7 @@ namespace PwdLess.Auth.Controllers
                 var totp = await _authService.CreateAndStoreTotp(identifier); // generate token & totp, store in chache, send totp in email
 
 
-                var body = _authService.TemplateProcessor(totp); // TODO: move to class
+                var body = _templateProcessor.ProcessTemplate(totp); // TODO: move to class
 
                 await _sender.SendAsync(identifier, body);
 

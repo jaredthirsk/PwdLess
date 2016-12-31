@@ -43,6 +43,7 @@ namespace PwdLess.Auth
             services.AddSingleton(Configuration);
             services.AddScoped<ISenderService, EmailService>(); // CAN REPLACE WITH ConsoleEmailTestingService
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<ITemplateProcessor, EmailTemplateProcessor>();
 
             // Add framework services.
             services.AddApplicationInsightsTelemetry(Configuration);
