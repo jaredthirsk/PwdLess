@@ -31,14 +31,23 @@ namespace PwdLess.Auth.Controllers
             _cache = cache;
         }
         
+        /// <summary>
+        /// Sends a TOTP to `identifier` (ie. email address).
+        /// In the process a token is created and stored in cache by AuthService.
+        /// </summary>
+        /// <param name="identifier">Eg. a user's email address or phone number.</param>
+        /// <returns>No significant response.</returns>
         public async Task<IActionResult> SendTotp(string identifier)
         {
             try
             {
+                // create a TOTP/token pair, store them, get TOTP
                 var totp = await _authService.CreateAndStoreTotp(identifier);
                 
+                // create body for message to be sent to user
                 var body = _templateProcessor.ProcessTemplate(totp);
 
+                // send message user
                 await _senderService.SendAsync(identifier, body);
 
                 return Ok($"Success! Sent TOTP to: {identifier}");
@@ -50,10 +59,17 @@ namespace PwdLess.Auth.Controllers
             
         }
 
+        /// <summary>
+        /// Retrieves a TOTP's associated token and returns it.
+        /// See `/SendTotp` to associate a TOTP with a token.
+        /// </summary>
+        /// <param name="totp">The TOTP to find an associated token for.</param>
+        /// <returns>Responds with token if sucessful.</returns>
         public async Task<IActionResult> TotpToToken(string totp)
         {
             try
             {
+                // Get a TOTP's associated token
                 var token = await _authService.GetTokenFromTotp(totp);
                 return Ok(token);
             }
@@ -67,7 +83,7 @@ namespace PwdLess.Auth.Controllers
             }
 
         }
-
+        
         public IActionResult Echo(string echo) // for testing
         {
             return Content(echo);
