@@ -1,5 +1,7 @@
 # PwdLess
-PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a time-based one-time password (in the form of a URL). Once the user opens the link (or manually types the one-time password), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run.
+<img src="http://pwdless.biarity.me/images/PwdLessLogo.svg" width="150">
+
+PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a time-based one-time password (TOTP), possibly in the form of a URL. Once the user opens the link (or manually types the TOTP into your app), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run.
 
 For more information, visit the official website: http://pwdless.biarity.me/.
 
@@ -7,11 +9,25 @@ For more information, visit the official website: http://pwdless.biarity.me/.
 Getting started with PwdLess is easy:
 
 1. [Download a PwdLess release](https://github.com/PwdLess/PwdLess/releases) for your OS of choice
- > if you don't find a build for your OS, consider [building from source](#building from source)
+ > if you don't find a build for your OS, consider building from source
 
 2. [Add configuration](#configuration) to the included `appsettings.json` file
 
-3. Run PwdLess & [test it](#http Endpoints) to see if it works 
+3. Run PwdLess & [test it](#http endpoints) to see if it works 
+
+# Basic process
+
+Here's an overview of how you can use PwdLess to authenticate a user (this is very similar to OAuth2 grants):
+_Note: TOTP == "Time-based One-Time Password"_
+
+1. Users provide their email address & are sent a TOTP
+A user provides their email address to your website (ie. JS client). In turn, it makes an API call to PwdLess's `/auth/sendtotp?identifier=USER_EMAIL`. This will cause PwdLess to send the email a TOTP. The email server settings are easily configurable.
+
+2. The user opens the TOTP URL or enters the TOTP into your app
+Once your website recieves the TOTP the user recieved (by letting the user enter it manually or through query strings), you will begin requesting a JWT for the user. To do this, your website makes an API call to PwdLess's `/auth/totpToToken?totp=SUPPLIED_TOTP`. PwdLess will then respond with a signed JWT containing the user's email address.
+
+3. You use the JWT to authenticate the user into your APIs
+Since it is not possible to change the contents of a signed JWT (given that you validate it in your APIs), you can now be certain of the user's identity & proceed by including the JWT in the authorization header of all subsequent requests made by your website.
 
 # HTTP Endpoints
 PwdLess exposes the following HTTP API:
@@ -23,10 +39,10 @@ Arguments could be sent in a `GET` query string (as shown below), or as `POST` b
   * responds `200` once email has been sent
   * responds `400` on any failiure (wrong email server settings, etc.)
 
-* `GET /auth/totptotoken?totp=[TOTP]` where `[TOTP]` is the TOTP to exhcnage for a token 
+* `GET /auth/totpToToken?totp=[TOTP]` where `[TOTP]` is the TOTP to exhcnage for a token 
   * searches cache for a token associated with given totp
   * responds `200` with the JWT (plaintext) if token found
-  * responds `404` with if the token wasn't found
+  * responds `404` with if the token wasn't found (ie. expired)
   * responds `400` on any failiure
 
 * `GET /auth/echo?echo=[TEXT]` where `[TEXT]` is some text to echo for testing
@@ -69,14 +85,19 @@ This configuration could also be provided in the form of environment variables, 
 
 To change the url/port at which the server runs (default of http://localhost:5000), supply a command line argument of `--url` (ie. `--url http://localhost:9538`)
 
+# Misc
+
+* By default, an in-memory distributed ASP.NET Core cache used. This could easily be replaced by another one such as Redis by changing the injected caching service in the ASP.NET Core IoC container & building from source.
+* For more information on the included templaing of TOTPs: https://github.com/PwdLess/PwdLess/wiki/Templating-&-TOTPs-in-emails
+* For the JSON Schema of the configuration file: https://github.com/PwdLess/PwdLess/wiki/Configuration-JSON-Schema
 
 # Building from source
 
 This project is built on top of ASP.NET Core, which supports a variety of operating systems. Follow this guide for more information: https://docs.microsoft.com/en-us/dotnet/articles/core/deploying/.
 
-# License & Contributions
+# License, Contributions, & Support
 
-This project is licensed under the permissive open source [MIT license](https://opensource.org/licenses/MIT). Feel free to contribute to this project in any way, any improvements are highly appreciated.
+This project is licensed under the permissive open source [MIT license](https://opensource.org/licenses/MIT). Feel free to contribute to this project in any way, any contributions are highly appreciated.
 
 
 
