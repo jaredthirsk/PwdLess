@@ -17,10 +17,6 @@ namespace PwdLess.Auth.Services
         Task SendAsync(string address, string body);
     }
 
-
-    /// <summary>
-    /// Use for testing, prints out supposed email message details to console.
-    /// </summary>
     public class ConsoleEmailTestingService : ISenderService
     {
         private IConfigurationRoot _config;
@@ -39,9 +35,6 @@ namespace PwdLess.Auth.Services
         }
     }
 
-    /// <summary>
-    /// Sends an email using configurable email server settings. Uses MailKit.
-    /// </summary>
     public class EmailService : ISenderService
     {
         private IConfigurationRoot _config;       

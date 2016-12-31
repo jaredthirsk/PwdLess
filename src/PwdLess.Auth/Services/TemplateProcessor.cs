@@ -13,10 +13,7 @@ namespace PwdLess.Auth.Services
     {
         string ProcessTemplate(string totp);
     }
-
-    /// <summary>
-    /// Uses email configuration to process template.
-    /// </summary>
+    
     public class EmailTemplateProcessor : ITemplateProcessor
     {
         private IConfigurationRoot _config;
