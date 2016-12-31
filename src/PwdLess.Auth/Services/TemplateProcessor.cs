@@ -6,11 +6,17 @@ using System.Threading.Tasks;
 
 namespace PwdLess.Auth.Services
 {
+    /// <summary>
+    /// Converts a template in configuration to a complete string, given a token.
+    /// </summary>
     public interface ITemplateProcessor
     {
         string ProcessTemplate(string totp);
     }
 
+    /// <summary>
+    /// Uses email configuration to process template.
+    /// </summary>
     public class EmailTemplateProcessor : ITemplateProcessor
     {
         private IConfigurationRoot _config;
