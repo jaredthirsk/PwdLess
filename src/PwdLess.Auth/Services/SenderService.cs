@@ -9,11 +9,18 @@ using System.Threading.Tasks;
 
 namespace PwdLess.Auth.Services
 {
+    /// <summary>
+    /// Handles sending a message with a "body" to an "address".
+    /// </summary>
     public interface ISenderService
     {
         Task SendAsync(string address, string body);
     }
 
+
+    /// <summary>
+    /// Use for testing, prints out supposed email message details to console.
+    /// </summary>
     public class ConsoleEmailTestingService : ISenderService
     {
         private IConfigurationRoot _config;
@@ -21,14 +28,20 @@ namespace PwdLess.Auth.Services
         {
             _config = config;
         }
-
+            
         public Task SendAsync(string address, string body)
         {
-            Console.WriteLine($"To: {address}, From: {new MailboxAddress(_config["PwdLess:EmailAuth:From"])}, Subject: {_config["PwdLess:EmailContents:Subject"]}, Body: {body}");
+            Console.WriteLine($@"To: {address}, 
+                                 From: {new MailboxAddress(_config["PwdLess:EmailAuth:From"])}, 
+                                 Subject: {_config["PwdLess:EmailContents:Subject"]}, 
+                                 Body: {body}");
             return null;
         }
     }
 
+    /// <summary>
+    /// Sends an email using configurable email server settings. Uses MailKit.
+    /// </summary>
     public class EmailService : ISenderService
     {
         private IConfigurationRoot _config;       
@@ -58,15 +71,10 @@ namespace PwdLess.Auth.Services
                 var username = _config["PwdLess:EmailAuth:Username"];
                 var password = _config["PwdLess:EmailAuth:Password"];
 
-
-                // For demo-purposes, accept all SSL certificates (in case the server supports STARTTLS)
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
                 client.Connect(server, port, ssl);
-
-                // Note: since we don't have an OAuth2 token, disable
-                // the XOAUTH2 authentication mechanism.
-                //client.AuthenticationMechanisms.Remove("XOAUTH2");
+                
                 client.Authenticate(username, password);
 
                 await client.SendAsync(message);
