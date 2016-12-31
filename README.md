@@ -15,6 +15,20 @@ Getting started with PwdLess is easy:
 
 3. Run PwdLess & [test it](#http endpoints) to see if it works 
 
+# Basic process
+
+Here's an overview of how you can use PwdLess to authenticate a user (this is very similar to OAuth2 grants):
+_Note: TOTP == "Time-based One-Time Password"_
+
+1. Users provide their email address & are sent a TOTP
+A user provides their email address to your website (ie. JS client). In turn, it makes an API call to PwdLess's `/auth/sendtotp?identifier=USER_EMAIL`. This will cause PwdLess to send the email a TOTP. The email server settings are easily configurable.
+
+2. The user opens the TOTP URL or enters the TOTP into your app
+Once your website recieves the TOTP the user recieved (by letting the user enter it manually or through query strings), you will begin requesting a JWT for the user. To do this, your website makes an API call to PwdLess's `/auth/totpToToken?totp=SUPPLIED_TOTP`. PwdLess will then respond with a signed JWT containing the user's email address.
+
+3. You use the JWT to authenticate the user into your APIs
+Since it is not possible to change the ocntents of a signed JWT (given that you validate it in your APIs), you can now be certain of the user's identity & proceed by including the JWT in the authorization header of all subsequent requests made by your website.
+
 # HTTP Endpoints
 PwdLess exposes the following HTTP API:
 
