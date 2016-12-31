@@ -1,24 +1,25 @@
 # PwdLess
 <img src="http://pwdless.biarity.me/images/PwdLessLogo.svg" width="150">
 
-PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a time-based one-time password (TOTP), possibly in the form of a URL. Once the user opens the link (or manually types the TOTP into your app), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run.
+PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a time-based one-time password (TOTP), possibly in the form of a URL. Once the user opens the link (or manually types the TOTP into your app), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run. This makes it platform-agnostic so you can easily integrate it into any tech-stack.
 
 For more information, visit the official website: http://pwdless.biarity.me/.
 
 # Getting Started
 Getting started with PwdLess is easy:
 
-1. [Download a PwdLess release](https://github.com/PwdLess/PwdLess/releases) for your OS of choice
- > if you don't find a build for your OS, consider building from source
+1. Download a [PwdLess release](https://github.com/PwdLess/PwdLess/releases) for your OS of choice
+ > if you don't find a build for your OS, consider [building from source](#building-from-source)
 
-2. [Add configuration](#configuration) to the included `appsettings.json` file
+2. Add [configuration](#configuration) to the included `appsettings.json` file
 
-3. Run PwdLess & [test it](#http endpoints) to see if it works 
+3. Run PwdLess & [test it](#http-endpoints) to see if it works 
 
 # Basic process
 
 Here's an overview of how you can use PwdLess to authenticate a user (this is very similar to OAuth2 grants):
-_Note: TOTP == "Time-based One-Time Password"_
+
+(_Note: TOTP == "Time-based One-Time Password"_, a short-lived password with the purpose of being replaced by a more permanent JWT)
 
 1. Users provide their email address & are sent a TOTP
 A user provides their email address to your website (ie. JS client). In turn, it makes an API call to PwdLess's `/auth/sendtotp?identifier=USER_EMAIL`. This will cause PwdLess to send the email a TOTP. The email server settings are easily configurable.
@@ -77,9 +78,7 @@ A description of each configuration item:
       "Body": `string: the body of sent emails, you add here a string "{{totp}}" that will be replaced by the TOTP once the email is sent, see wiki entry on TOTPs in emails`,
       "BodyType":  `string: type of message body (ie. "plain" for plaintext and "html" for HTML)`
     }
-  },
-  ...
-}
+  }
 ```
 This configuration could also be provided in the form of environment variables, where nesting is acheived by using colons (ie. "EmailContents:Subject").
 
