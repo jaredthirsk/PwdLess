@@ -53,7 +53,6 @@
     "include": [
       "wwwroot",
       "**/*.cshtml",
-      "appsettings.json",
       "web.config"
     ]
   }

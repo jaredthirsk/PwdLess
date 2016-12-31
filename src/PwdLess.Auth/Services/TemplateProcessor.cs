@@ -24,10 +24,7 @@ namespace PwdLess.Auth.Services
 
         public string ProcessTemplate(string totp)
         {
-            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
-
-            var body = _config["PwdLess:EmailContents:Body"].Replace("{{url}}", url)
-                                                             .Replace("{{totp}}", totp);
+            var body = _config["PwdLess:EmailContents:Body"].Replace("{{totp}}", totp);
             return body;
         }
     }
