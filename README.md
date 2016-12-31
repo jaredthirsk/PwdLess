@@ -19,7 +19,7 @@ Getting started with PwdLess is easy:
 
 Here's an overview of how you can use PwdLess to authenticate a user (this is very similar to OAuth2 grants):
 
-(_Note: TOTP == "Time-based One-Time Password"_)
+(_Note: TOTP == "Time-based One-Time Password"_, a short-lived password with the purpose of being replaced by a more permanent JWT)
 
 1. Users provide their email address & are sent a TOTP
 A user provides their email address to your website (ie. JS client). In turn, it makes an API call to PwdLess's `/auth/sendtotp?identifier=USER_EMAIL`. This will cause PwdLess to send the email a TOTP. The email server settings are easily configurable.
