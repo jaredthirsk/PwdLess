@@ -44,14 +44,17 @@ namespace PwdLess.Auth.Services
             }
         }
 
-        public async Task CreateAndSendTotp(string email)
+        public async Task CreateAndSendTotp(string identifier)
         {
-            var token = CreateToken(email);
+            var token = CreateToken(identifier);
             var totp = GenerateTotp();
 
             await AddToCache(token, totp);
-            
-            await _sender.SendAsync(email, totp);
+
+
+            var body = TemplateToBody(totp);
+
+            await _sender.SendAsync(identifier, body);
         }
 
         private string CreateToken(string sub, Dictionary<string, object> claims = null)
@@ -100,5 +103,16 @@ namespace PwdLess.Auth.Services
         {
             return (int)(dateTime.ToUniversalTime().Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
         }
+
+        private string TemplateToBody(string totp)
+        {
+            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
+
+            var body = _config["PwdLess:EmailContents:Body"].Replace("{{url}}", url)
+                                                             .Replace("{{totp}}", totp);
+            return body;
+        }
+
+
     }
 }

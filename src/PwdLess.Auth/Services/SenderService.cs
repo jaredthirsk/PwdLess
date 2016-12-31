@@ -11,7 +11,7 @@ namespace PwdLess.Auth.Services
 {
     public interface ISenderService
     {
-        Task SendAsync(string address, string totp);
+        Task SendAsync(string address, string body);
     }
 
     public class ConsoleEmailTestingService : ISenderService
@@ -31,13 +31,10 @@ namespace PwdLess.Auth.Services
         }
 
 
-        public Task SendAsync(string email, string totp)
+        public Task SendAsync(string address, string body)
         {
-            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
-
-            EmailBody = _config["PwdLess:EmailContents:Body"].Replace("{{url}}", url)
-                .Replace("{{totp}}", totp);
-            Console.WriteLine($"To: {email}, From: {EmailFrom}, Subject: {EmailSubject}, Body: {EmailBody}");
+            EmailBody = body;
+            Console.WriteLine($"To: {address}, From: {EmailFrom}, Subject: {EmailSubject}, Body: {EmailBody}");
             return null;
         }
     }
@@ -59,13 +56,13 @@ namespace PwdLess.Auth.Services
         }
 
 
-        public async Task SendAsync(string email, string totp)
+        public async Task SendAsync(string address, string body)
         {
-            ProcessTemplates(totp);
+            EmailBody = body;
 
             var message = new MimeMessage();
             message.From.Add(EmailFrom);
-            message.To.Add(new MailboxAddress(email));
+            message.To.Add(new MailboxAddress(address));
             message.Subject = EmailSubject;
 
             message.Body = new TextPart("plain")
@@ -96,13 +93,6 @@ namespace PwdLess.Auth.Services
                 client.Disconnect(true);
             }
         }
-
-        private void ProcessTemplates(string totp)
-        {
-            var url = _config["PwdLess:ClientJwtUrl"].Replace("{{totp}}", totp);
-
-            EmailBody = _config["PwdLess:EmailContents:Body"].Replace("{{url}}", url)
-                .Replace("{{totp}}", totp);
-        }
+        
     }
 }
