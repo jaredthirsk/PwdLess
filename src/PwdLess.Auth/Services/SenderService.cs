@@ -16,58 +16,40 @@ namespace PwdLess.Auth.Services
 
     public class ConsoleEmailTestingService : ISenderService
     {
-        public string EmailSubject { get; private set; }
-        public string EmailBody { get; private set; }
-        public MailboxAddress EmailFrom { get; private set; }
-
         private IConfigurationRoot _config;
         public ConsoleEmailTestingService(IConfigurationRoot config)
         {
             _config = config;
-
-            EmailFrom = new MailboxAddress(_config["PwdLess:EmailAuth:From"]);
-            EmailSubject = _config["PwdLess:EmailContents:Subject"];
-
         }
 
 
         public Task SendAsync(string address, string body)
         {
-            EmailBody = body;
-            Console.WriteLine($"To: {address}, From: {EmailFrom}, Subject: {EmailSubject}, Body: {EmailBody}");
+            Console.WriteLine($"To: {address}, From: {new MailboxAddress(_config["PwdLess:EmailAuth:From"])}, Subject: {_config["PwdLess:EmailContents:Subject"]}, Body: {body}");
             return null;
         }
     }
 
     public class EmailService : ISenderService
     {
-        public string EmailSubject { get; private set; }
-        public string EmailBody { get; private set; }
-        public MailboxAddress EmailFrom { get; private set; }
-
         private IConfigurationRoot _config;       
         public EmailService(IConfigurationRoot config)
         {
             _config = config;
 
-            EmailFrom = new MailboxAddress(_config["PwdLess:EmailAuth:From"]);
-            EmailSubject = _config["PwdLess:EmailContents:Subject"];
-            
         }
 
 
         public async Task SendAsync(string address, string body)
         {
-            EmailBody = body;
-
             var message = new MimeMessage();
-            message.From.Add(EmailFrom);
+            message.From.Add(new MailboxAddress(_config["PwdLess:EmailAuth:From"]));
             message.To.Add(new MailboxAddress(address));
-            message.Subject = EmailSubject;
+            message.Subject = _config["PwdLess:EmailContents:Subject"];
 
-            message.Body = new TextPart("plain")
+            message.Body = new TextPart(_config["PwdLess:EmailContents:BodyType"])
             {
-                Text = EmailBody
+                Text = body
             };
 
             using (var client = new SmtpClient())
