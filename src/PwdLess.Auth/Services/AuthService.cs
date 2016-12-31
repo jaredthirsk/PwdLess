@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -59,10 +60,24 @@ namespace PwdLess.Auth.Services
         
         private string GenerateTotp()
         {
-            string guid = new String(Guid.NewGuid().ToString()
-                                      .Take(Int32.Parse(_config["PwdLess:Totp:Length"]))
-                                      .ToArray());
-            return guid;
+            int maxLength = Int32.Parse(_config["PwdLess:Totp:Length"]);
+
+            Byte[] cRBytes = new Byte[maxLength];
+            RandomNumberGenerator cRNG = RandomNumberGenerator.Create();
+            cRNG.GetBytes(cRBytes);
+
+            string cRString = Convert.ToBase64String(cRBytes)
+                .Replace("+", "")
+                .Replace("=", "")
+                .Replace("/", "")
+                .Substring(0, maxLength);
+
+            //string guid = new String(Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+            //                         .Replace("=", "")
+            //                         .Replace("+", "")
+            //                         .Take(Int32.Parse(_config["PwdLess:Totp:Length"]))
+            //                         .ToArray());
+            return cRString;
         }
         
         private string CreateToken(string sub, Dictionary<string, object> claims = null)
