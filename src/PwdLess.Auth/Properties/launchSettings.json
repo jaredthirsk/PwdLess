@@ -19,7 +19,7 @@
     "PwdLess.Auth": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "http://localhost:5000/api/auth/echo?echo=works",
+      "launchUrl": "http://localhost:5000/auth/echo?echo=works",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
