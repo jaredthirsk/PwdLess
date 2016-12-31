@@ -27,7 +27,7 @@ A user provides their email address to your website (ie. JS client). In turn, it
 Once your website recieves the TOTP the user recieved (by letting the user enter it manually or through query strings), you will begin requesting a JWT for the user. To do this, your website makes an API call to PwdLess's `/auth/totpToToken?totp=SUPPLIED_TOTP`. PwdLess will then respond with a signed JWT containing the user's email address.
 
 3. You use the JWT to authenticate the user into your APIs
-Since it is not possible to change the ocntents of a signed JWT (given that you validate it in your APIs), you can now be certain of the user's identity & proceed by including the JWT in the authorization header of all subsequent requests made by your website.
+Since it is not possible to change the contents of a signed JWT (given that you validate it in your APIs), you can now be certain of the user's identity & proceed by including the JWT in the authorization header of all subsequent requests made by your website.
 
 # HTTP Endpoints
 PwdLess exposes the following HTTP API:
@@ -39,10 +39,10 @@ Arguments could be sent in a `GET` query string (as shown below), or as `POST` b
   * responds `200` once email has been sent
   * responds `400` on any failiure (wrong email server settings, etc.)
 
-* `GET /auth/totptotoken?totp=[TOTP]` where `[TOTP]` is the TOTP to exhcnage for a token 
+* `GET /auth/totpToToken?totp=[TOTP]` where `[TOTP]` is the TOTP to exhcnage for a token 
   * searches cache for a token associated with given totp
   * responds `200` with the JWT (plaintext) if token found
-  * responds `404` with if the token wasn't found
+  * responds `404` with if the token wasn't found (ie. expired)
   * responds `400` on any failiure
 
 * `GET /auth/echo?echo=[TEXT]` where `[TEXT]` is some text to echo for testing
