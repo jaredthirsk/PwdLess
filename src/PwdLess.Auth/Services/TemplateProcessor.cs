@@ -20,7 +20,7 @@ namespace PwdLess.Auth.Services
     public class EmailTemplateProcessor : ITemplateProcessor
     {
         private IConfigurationRoot _config;
-        public void TemplateProcessor(IConfigurationRoot config)
+        public EmailTemplateProcessor(IConfigurationRoot config)
         {
             _config = config;
         }
