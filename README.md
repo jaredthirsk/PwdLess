@@ -78,9 +78,7 @@ A description of each configuration item:
       "Body": `string: the body of sent emails, you add here a string "{{totp}}" that will be replaced by the TOTP once the email is sent, see wiki entry on TOTPs in emails`,
       "BodyType":  `string: type of message body (ie. "plain" for plaintext and "html" for HTML)`
     }
-  },
-  ...
-}
+  }
 ```
 This configuration could also be provided in the form of environment variables, where nesting is acheived by using colons (ie. "EmailContents:Subject").
 
