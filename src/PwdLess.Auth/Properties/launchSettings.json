@@ -18,6 +18,7 @@
     },
     "PwdLess.Auth": {
       "commandName": "Project",
+      "commandLineArgs": "--url \"http://loclahost:5000\" ",
       "launchBrowser": true,
       "launchUrl": "http://localhost:5000/auth/echo?echo=works",
       "environmentVariables": {

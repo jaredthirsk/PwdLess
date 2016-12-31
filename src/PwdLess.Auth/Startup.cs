@@ -20,10 +20,10 @@ namespace PwdLess.Auth
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-                //.AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                //.AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+                .AddEnvironmentVariables();
 
-            builder.AddEnvironmentVariables();
             Configuration = builder.Build();
         }
 
@@ -48,6 +48,11 @@ namespace PwdLess.Auth
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
+
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
 
             app.UseMvc();
         }
