@@ -8,10 +8,10 @@ For more information, visit the official website: http://pwdless.biarity.me/.
 # Getting Started
 Getting started with PwdLess is easy:
 
-1. [Download a PwdLess release](https://github.com/PwdLess/PwdLess/releases) for your OS of choice
+1. Download a [PwdLess release](https://github.com/PwdLess/PwdLess/releases) for your OS of choice
  > if you don't find a build for your OS, consider [building from source](#building-from-source)
 
-2. [Add configuration](#configuration) to the included `appsettings.json` file
+2. Add [configuration](#configuration) to the included `appsettings.json` file
 
 3. Run PwdLess & [test it](#http-endpoints) to see if it works 
 
