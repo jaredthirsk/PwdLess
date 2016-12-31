@@ -35,7 +35,7 @@ namespace PwdLess.Auth.Controllers
         /// Sends a TOTP to `identifier` (ie. email address).
         /// In the process a token is created and stored in cache by AuthService.
         /// </summary>
-        /// <param name="identifier">Eg. a user's email address or phone number.</param>
+        /// <param name="identifier">A unique user identifier. Eg. a user's email address or phone number.</param>
         /// <returns>No significant response.</returns>
         public async Task<IActionResult> SendTotp(string identifier)
         {

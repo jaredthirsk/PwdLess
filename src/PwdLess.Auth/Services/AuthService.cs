@@ -9,11 +9,16 @@ using System.Threading.Tasks;
 
 namespace PwdLess.Auth.Services
 {
+    /// <summary>
+    /// Handles creating TOTPs and tokens.
+    /// Also handles storing them in a cache and retrieving them if present.
+    /// </summary>
     public interface IAuthService
     {
         Task<string> CreateAndStoreTotp(string identifier);
         Task<string> GetTokenFromTotp(string totp);
     }
+
 
     public class AuthService : IAuthService
     {
@@ -26,6 +31,14 @@ namespace PwdLess.Auth.Services
             _cache = cache;
         }
 
+
+        /// <summary>
+        /// Creates a TOTP and a token from identifier. 
+        /// Stores Token and token in cache.
+        /// Returns the TOTP.
+        /// </summary>
+        /// <param name="identifier">The unique user identifier to geenrate token from.</param>
+        /// <returns>The TOTP.</returns>
         public async Task<string> CreateAndStoreTotp(string identifier)
         {
             var token = CreateToken(identifier);
@@ -36,6 +49,13 @@ namespace PwdLess.Auth.Services
             return totp;
         }
 
+
+        /// <summary>
+        /// Gets a TOTP's associated token from the cache, if it exists.
+        /// Else throws an IndexOutOfRangeException.
+        /// </summary>
+        /// <param name="totp">The TOTP to get the associated token of.</param>
+        /// <returns>The associated Token if it exists.</returns>
         public async Task<string> GetTokenFromTotp(string totp)
         {
             byte[] token = await _cache.GetAsync(totp);
@@ -52,7 +72,11 @@ namespace PwdLess.Auth.Services
             }
         }
 
-
+        /// <summary>
+        /// Generates a random TOTP through creating a GUID.
+        /// configure max length in configuration.
+        /// </summary>
+        /// <returns>The generated TOTP.</returns>
         private string GenerateTotp()
         {
             string guid = new String(Guid.NewGuid().ToString()
@@ -61,6 +85,12 @@ namespace PwdLess.Auth.Services
             return guid;
         }
 
+        /// <summary>
+        /// Creates a JWT token from configuration.
+        /// </summary>
+        /// <param name="sub">Subject claim of JWT.</param>
+        /// <param name="claims">Other optional claims to incldue in JWT. (currently unused)</param>
+        /// <returns>Generated JWT.</returns>
         private string CreateToken(string sub, Dictionary<string, object> claims = null)
         {
             var payload = new Dictionary<string, object>
@@ -85,6 +115,12 @@ namespace PwdLess.Auth.Services
             return token;
         }
 
+        /// <summary>
+        /// Adds TOTP/token pair to cache with configurable expiry.
+        /// </summary>
+        /// <param name="token">Associated token.</param>
+        /// <param name="totp">Associated TOTP.</param>
+        /// <returns>Nothing.</returns>
         private async Task AddToCache(string token, string totp)
         {
             await _cache.SetAsync(totp,
@@ -95,6 +131,11 @@ namespace PwdLess.Auth.Services
                 });
         }
 
+        /// <summary>
+        /// Helper method to convert .NET DateTime type to Unix NumericDate type.
+        /// </summary>
+        /// <param name="dateTime">The .NET DateTime type.</param>
+        /// <returns>A NumericDate.</returns>
         private long ToUnixTime(DateTime dateTime)
         {
             return (int)(dateTime.ToUniversalTime().Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
