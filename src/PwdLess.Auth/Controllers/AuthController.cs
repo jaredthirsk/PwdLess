@@ -12,7 +12,7 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace PwdLess.Auth.Controllers
 {
-    [Route("api/[controller]/[action]")]
+    [Route("[controller]/[action]")]
     public class AuthController : Controller
     {
         private IAuthService _authService;
