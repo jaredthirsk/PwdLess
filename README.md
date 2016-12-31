@@ -1,5 +1,5 @@
 # PwdLess
-![PwdLess Logo](http://pwdless.biarity.me/images/PwdLessLogo.svg  =200px) 
+<img src="http://pwdless.biarity.me/images/PwdLessLogo.svg" width="150">
 
 PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a time-based one-time password (in the form of a URL). Once the user opens the link (or manually types the one-time password), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run.
 
