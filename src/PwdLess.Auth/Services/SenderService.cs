@@ -64,8 +64,6 @@ namespace PwdLess.Auth.Services
                 var username = _config["PwdLess:EmailAuth:Username"];
                 var password = _config["PwdLess:EmailAuth:Password"];
 
-                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-
                 client.Connect(server, port, ssl);
                 
                 client.Authenticate(username, password);
