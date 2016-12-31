@@ -1,3 +1,3 @@
 # PwdLess
 
-A stateless, platform-agnostic passwordless authentication server.
+A platform-agnostic passwordless authentication server that's a joy to use.
