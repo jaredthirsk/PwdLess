@@ -1,4 +1,6 @@
 # PwdLess
+![PwdLess Logo](http://pwdless.biarity.me/images/PwdLessLogo.svg  =200px) 
+
 PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a time-based one-time password (in the form of a URL). Once the user opens the link (or manually types the one-time password), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run.
 
 For more information, visit the official website: http://pwdless.biarity.me/.
@@ -69,12 +71,17 @@ This configuration could also be provided in the form of environment variables, 
 
 To change the url/port at which the server runs (default of http://localhost:5000), supply a command line argument of `--url` (ie. `--url http://localhost:9538`)
 
+# Misc
+
+* By default, an in-memory distributed ASP.NET Core cache used. This could easily be replaced by another one such as Redis by changing the injected caching service in the ASP.NET Core IoC container & building from source.
+* For more information on the included templaing of TOTPs: https://github.com/PwdLess/PwdLess/wiki/Templating-&-TOTPs-in-emails
+* For the JSON Schema of the configuration file: https://github.com/PwdLess/PwdLess/wiki/Configuration-JSON-Schema
 
 # Building from source
 
 This project is built on top of ASP.NET Core, which supports a variety of operating systems. Follow this guide for more information: https://docs.microsoft.com/en-us/dotnet/articles/core/deploying/.
 
-# License & Contributions
+# License, Contributions, & Support
 
 This project is licensed under the permissive open source [MIT license](https://opensource.org/licenses/MIT). Feel free to contribute to this project in any way, any improvements are highly appreciated.
 
