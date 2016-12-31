@@ -75,7 +75,7 @@ namespace PwdLess.Auth.Controllers
             }
             catch (IndexOutOfRangeException)
             {
-                return BadRequest("TOTP not found.");
+                return NotFound("TOTP not found.");
             }
             catch (Exception)
             {
