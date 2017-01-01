@@ -35,21 +35,21 @@ namespace PwdLess.Auth.Controllers
             _logger = logger;
         }
         
-        public async Task<IActionResult> SendTotp(string identifier)
+        public async Task<IActionResult> SendNonce(string identifier)
         {
             try
             {
-                // create a TOTP/token pair, store them, get TOTP
-                var totp = await _authService.CreateAndStoreTotp(identifier);
+                // create a nonce/token pair, store them, get Nonce
+                var nonce = await _authService.CreateAndStoreNonce(identifier);
                 
                 // create body for message to be sent to user
-                var body = _templateProcessor.ProcessTemplate(totp);
+                var body = _templateProcessor.ProcessTemplate(nonce);
 
                 // send message user
                 await _senderService.SendAsync(identifier, body);
 
                 _logger.LogDebug($"A message was sent to: {identifier}. It contained the body: {body}");
-                return Ok($"Success! Sent TOTP to: {identifier}");
+                return Ok($"Success! Sent Nonce to: {identifier}");
             }
             catch (Exception e)
             {
@@ -59,20 +59,20 @@ namespace PwdLess.Auth.Controllers
             
         }
         
-        public async Task<IActionResult> TotpToToken(string totp)
+        public async Task<IActionResult> NonceToToken(string nonce)
         {
             try
             {
-                // Get a TOTP's associated token
-                var token = await _authService.GetTokenFromTotp(totp);
+                // Get a Nonce's associated token
+                var token = await _authService.GetTokenFromNonce(nonce);
 
-                _logger.LogDebug("TOTP: {totp}, token sent: {token}");
+                _logger.LogDebug("Nonce: {nonce}, token sent: {token}");
                 return Ok(token);
             }
             catch (IndexOutOfRangeException)
             {
-                _logger.LogDebug($"A requested TOTP's token was not found. TOTP: {totp}");
-                return NotFound("TOTP not found.");
+                _logger.LogDebug($"A requested nonce's token was not found. Nonce: {nonce}");
+                return NotFound("Nonce not found.");
             }
             catch (Exception e)
             {
@@ -81,10 +81,9 @@ namespace PwdLess.Auth.Controllers
             }
 
         }
-        
-        public IActionResult Echo(string echo) // for testing
+
+        public IActionResult Echo(string echo)
         {
-            _logger.LogDebug($"Echoed: {echo}");
             return Content(echo);
         }
     }

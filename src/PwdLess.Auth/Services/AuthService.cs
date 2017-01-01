@@ -11,13 +11,13 @@ using System.Threading.Tasks;
 namespace PwdLess.Auth.Services
 {
     /// <summary>
-    /// Handles creating TOTPs and tokens.
+    /// Handles creating nonces and tokens.
     /// Also handles storing them in a cache and retrieving them if present.
     /// </summary>
     public interface IAuthService
     {
-        Task<string> CreateAndStoreTotp(string identifier);
-        Task<string> GetTokenFromTotp(string totp);
+        Task<string> CreateAndStoreNonce(string identifier);
+        Task<string> GetTokenFromNonce(string nonce);
     }
 
 
@@ -32,35 +32,35 @@ namespace PwdLess.Auth.Services
             _cache = cache;
         }
         
-        public async Task<string> CreateAndStoreTotp(string identifier)
+        public async Task<string> CreateAndStoreNonce(string identifier)
         {
             var token = CreateToken(identifier);
-            var totp = GenerateTotp();
+            var nonce = GenerateNonce();
 
-            await AddToCache(token, totp);
+            await AddToCache(token, nonce);
 
-            return totp;
+            return nonce;
         }
 
-        public async Task<string> GetTokenFromTotp(string totp)
+        public async Task<string> GetTokenFromNonce(string nonce)
         {
-            byte[] token = await _cache.GetAsync(totp);
+            byte[] token = await _cache.GetAsync(nonce);
 
             if (token != null)
             {
-                await _cache.RemoveAsync(totp);
+                await _cache.RemoveAsync(nonce);
 
                 return Encoding.UTF8.GetString(token);
             }
             else
             {
-                throw new IndexOutOfRangeException("Totp doesn't exist.");
+                throw new IndexOutOfRangeException("Nonce doesn't exist.");
             }
         }
         
-        private string GenerateTotp()
+        private string GenerateNonce()
         {
-            int maxLength = Int32.Parse(_config["PwdLess:Totp:Length"]);
+            int maxLength = Int32.Parse(_config["PwdLess:Nonce:Length"]);
 
             Byte[] cRBytes = new Byte[maxLength];
             RandomNumberGenerator cRNG = RandomNumberGenerator.Create();
@@ -72,11 +72,6 @@ namespace PwdLess.Auth.Services
                 .Replace("/", "")
                 .Substring(0, maxLength);
 
-            //string guid = new String(Convert.ToBase64String(Guid.NewGuid().ToByteArray())
-            //                         .Replace("=", "")
-            //                         .Replace("+", "")
-            //                         .Take(Int32.Parse(_config["PwdLess:Totp:Length"]))
-            //                         .ToArray());
             return cRString;
         }
         
@@ -104,13 +99,13 @@ namespace PwdLess.Auth.Services
             return token;
         }
         
-        private async Task AddToCache(string token, string totp)
+        private async Task AddToCache(string token, string nonce)
         {
-            await _cache.SetAsync(totp,
+            await _cache.SetAsync(nonce,
                 Encoding.UTF8.GetBytes(token),
                 new DistributedCacheEntryOptions()
                 {
-                    SlidingExpiration = new TimeSpan(0, Int32.Parse(_config["PwdLess:Totp:Expiry"]), 0)
+                    SlidingExpiration = new TimeSpan(0, Int32.Parse(_config["PwdLess:Nonce:Expiry"]), 0)
                 });
         }
         

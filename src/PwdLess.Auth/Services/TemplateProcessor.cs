@@ -11,7 +11,7 @@ namespace PwdLess.Auth.Services
     /// </summary>
     public interface ITemplateProcessor
     {
-        string ProcessTemplate(string totp);
+        string ProcessTemplate(string nonce);
     }
     
     public class EmailTemplateProcessor : ITemplateProcessor
@@ -22,9 +22,9 @@ namespace PwdLess.Auth.Services
             _config = config;
         }
 
-        public string ProcessTemplate(string totp)
+        public string ProcessTemplate(string nonce)
         {
-            var body = _config["PwdLess:EmailContents:Body"].Replace("{{totp}}", totp);
+            var body = _config["PwdLess:EmailContents:Body"].Replace("{{nonce}}", nonce);
             return body;
         }
     }
