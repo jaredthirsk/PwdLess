@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using PwdLess.Auth.Services;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using AspNetCoreRateLimit;
 
 namespace PwdLess.Auth
 {
@@ -32,14 +33,20 @@ namespace PwdLess.Auth
         // This method gets called by the runtime. Use this method to add services to the container
         public void ConfigureServices(IServiceCollection services)
         {
-            // Add PwdLess services
+            // PwdLess services
             services.AddDistributedMemoryCache(); // CAN REPLACE WITH AddDistrbutedRedisCache for Redis support
             services.AddSingleton(Configuration);
             services.AddScoped<ISenderService, EmailService>(); // CAN REPLACE WITH ConsoleEmailTestingService
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ITemplateProcessor, EmailTemplateProcessor>();
-            
-            // Add framework services.
+
+            // rate-limiting services
+            services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+            services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
+            services.AddSingleton<IIpPolicyStore, DistributedCacheIpPolicyStore>();
+            services.AddSingleton<IRateLimitCounterStore, DistributedCacheRateLimitCounterStore>();
+
+            // framework services.
             services.AddMvc();
         }
 
@@ -53,6 +60,8 @@ namespace PwdLess.Auth
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseIpRateLimiting();
 
             app.UseMvc();
         }
