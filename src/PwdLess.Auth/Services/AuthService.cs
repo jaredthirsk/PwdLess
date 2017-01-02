@@ -60,18 +60,17 @@ namespace PwdLess.Auth.Services
         
         private string GenerateNonce()
         {
+            // populate a byte[] with crypto RNG bytes
             int maxLength = Int32.Parse(_config["PwdLess:Nonce:Length"]);
-
             Byte[] cRBytes = new Byte[maxLength];
-            RandomNumberGenerator cRNG = RandomNumberGenerator.Create();
-            cRNG.GetBytes(cRBytes);
+            RandomNumberGenerator.Create().GetBytes(cRBytes);
 
+            // SHA1 the bytes to normalize across platfroms
             byte[] sha1 = SHA1.Create().ComputeHash(cRBytes);
 
-            string cRString = Convert.ToBase64String(sha1)
-                .Replace("+", "")
-                .Replace("=", "")
-                .Replace("/", "")
+            // convert bytes to string via HEX
+            string cRString = BitConverter.ToString(cRBytes)
+                .Replace("-", "")
                 .Substring(0, maxLength);
             
             return cRString;
