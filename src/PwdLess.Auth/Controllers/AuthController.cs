@@ -81,10 +81,5 @@ namespace PwdLess.Auth.Controllers
             }
 
         }
-
-        public IActionResult Echo(string echo)
-        {
-            return Content(echo);
-        }
     }
 }
