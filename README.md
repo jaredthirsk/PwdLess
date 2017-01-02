@@ -44,9 +44,6 @@ Arguments could be sent in a `GET` query string (as shown below), or as `POST` b
   * responds `404` with if the token wasn't found (ie. expired)
   * responds `400` on any failiure
 
-* `GET /auth/echo?echo=[TEXT]` where `[TEXT]` is some text to echo for testing
-  * use to check if server is running properly
-
 # Configuration
 The configration is in present in the root folder, in `appsettings.json`. This tells PwdLess about everything it needs to know to start working.
 
