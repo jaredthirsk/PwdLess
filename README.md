@@ -92,6 +92,14 @@ PwdLess uses the [AspNetCoreRateLimit](https://www.nuget.org/packages/AspNetCore
 
 This project is built on top of ASP.NET Core, which supports a variety of operating systems. Follow this guide for more information: https://docs.microsoft.com/en-us/dotnet/articles/core/deploying/.
 
+# Design goals
+PwdLess is designed to maximise ease of use and conveniece for both the developers and the users (even at the cost of not having more advanced features). With this in mind this, here are some of the rough aspects of PwdLess:
+
+* Stateless - no database: PwdLess should preferably operate only with caches; this means PwdLess will not handle generating & storing refresh tokens (such functionality should be manually implemented if needed, or just use long-lived access tokens).
+* Platform-agnostic: PwdLess should not care about the rest of your tech stack, should only be an independent server
+* It should not be necessary to edit PwdLess source code: all necessary configuration should be present outside the code (ie. in `appsettings.json`)
+* Advanced customization, however, should not be added to configuration: advanced configuration to customise non-PwdLess aspects such as JOSE-JWT & MailKit shoukd preferably not be customisable through configuration, instead, editing source code would be the preferred way
+
 # License, Contributions, & Support
 
 This project is licensed under the permissive open source [MIT license](https://opensource.org/licenses/MIT). Feel free to contribute to this project in any way, any contributions are highly appreciated.
