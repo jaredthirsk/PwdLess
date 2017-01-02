@@ -38,7 +38,7 @@ Arguments could be sent in a `GET` query string (as shown below), or as `POST` b
   * responds `200` once email has been sent
   * responds `400` on any failiure (wrong email server settings, etc.)
 
-* `GET /auth/nonceToToken?nonce=[NONCE]` where `[NONCE]` is the nonce to exhcnage for a token 
+* `GET /auth/nonceToToken?nonce=[NONCE]` where `[NONCE]` is the nonce to exchange for a token 
   * searches cache for a token associated with given nonce
   * responds `200` with the JWT (plaintext) if token found
   * responds `404` with if the token wasn't found (ie. expired)
