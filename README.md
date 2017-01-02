@@ -1,7 +1,7 @@
 # PwdLess
 <img src="http://pwdless.biarity.me/images/PwdLessLogo.svg" width="150">
 
-PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a time-based one-time password (TOTP), possibly in the form of a URL. Once the user opens the link (or manually types the TOTP into your app), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run. This makes it platform-agnostic so you can easily integrate it into any tech-stack.
+PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a nonce, possibly in the form of a URL. Once the user opens the link (or manually types the nonce into your app), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run. This makes it platform-agnostic so you can easily integrate it into any tech-stack.
 
 For more information, visit the official website: http://pwdless.biarity.me/.
 
@@ -19,13 +19,11 @@ Getting started with PwdLess is easy:
 
 Here's an overview of how you can use PwdLess to authenticate a user (this is very similar to OAuth2 grants):
 
-(_Note: TOTP == "Time-based One-Time Password"_, a short-lived password with the purpose of being replaced by a more permanent JWT)
+1. Users provide their email address & are sent a nonce
+A user provides their email address to your website (ie. JS client). In turn, it makes an API call to PwdLess's `/auth/sendNonce?identifier=USER_EMAIL`. This will cause PwdLess to send the email a nonce. The email server settings are easily configurable.
 
-1. Users provide their email address & are sent a TOTP
-A user provides their email address to your website (ie. JS client). In turn, it makes an API call to PwdLess's `/auth/sendtotp?identifier=USER_EMAIL`. This will cause PwdLess to send the email a TOTP. The email server settings are easily configurable.
-
-2. The user opens the TOTP URL or enters the TOTP into your app
-Once your website recieves the TOTP the user recieved (by letting the user enter it manually or through query strings), you will begin requesting a JWT for the user. To do this, your website makes an API call to PwdLess's `/auth/totpToToken?totp=SUPPLIED_TOTP`. PwdLess will then respond with a signed JWT containing the user's email address.
+2. The user opens the nonce URL or enters the nonce into your app
+Once your website recieves the nonce the user recieved (by letting the user enter it manually or through query strings), you will begin requesting a JWT for the user. To do this, your website makes an API call to PwdLess's `/auth/nonceToToken?nonce=SUPPLIED_NONCE`. PwdLess will then respond with a signed JWT containing the user's email address.
 
 3. You use the JWT to authenticate the user into your APIs
 Since it is not possible to change the contents of a signed JWT (given that you validate it in your APIs), you can now be certain of the user's identity & proceed by including the JWT in the authorization header of all subsequent requests made by your website.
@@ -35,13 +33,13 @@ PwdLess exposes the following HTTP API:
 
 Arguments could be sent in a `GET` query string (as shown below), or as `POST` body values.
 
-* `GET /auth/sendtotp?identifier=[IDENTIFIER]` where `[IDENTIFIER]` is the user's email
-  * creates a TOTP/token pair, stores it in cache, and sends the TOTP to `[IDENTIFIER]`
+* `GET /auth/sendNonce?identifier=[IDENTIFIER]` where `[IDENTIFIER]` is the user's email
+  * creates a nonce/token pair, stores it in cache, and sends the nonce to `[IDENTIFIER]`
   * responds `200` once email has been sent
   * responds `400` on any failiure (wrong email server settings, etc.)
 
-* `GET /auth/totpToToken?totp=[TOTP]` where `[TOTP]` is the TOTP to exhcnage for a token 
-  * searches cache for a token associated with given totp
+* `GET /auth/nonceToToken?nonce=[NONCE]` where `[NONCE]` is the nonce to exhcnage for a token 
+  * searches cache for a token associated with given nonce
   * responds `200` with the JWT (plaintext) if token found
   * responds `404` with if the token wasn't found (ie. expired)
   * responds `400` on any failiure
@@ -55,9 +53,9 @@ The configration is in present in the root folder, in `appsettings.json`. This t
 A description of each configuration item:
 ```
   "PwdLess": {
-    "Totp": {
-      "Expiry": `int: the number of minutes to pass before a TOTP expires`,
-      "Length": `int: the maximum length of a TOTP (cutoff at 36)`
+    "Nonce": {
+      "Expiry": `int: the number of minutes to pass before a nonce expires`,
+      "Length": `int: the maximum length of a nonce (cutoff at 36)`
     },
     "Jwt": {
       "SecretKey": `string: the key used to sign the JWTs to prevent it from being tampered, should only be present here and in your API for JWT validation`,
@@ -75,7 +73,7 @@ A description of each configuration item:
     },
     "EmailContents": {
       "Subject": `string: the subject of sent emails`,
-      "Body": `string: the body of sent emails, you add here a string "{{totp}}" that will be replaced by the TOTP once the email is sent, see wiki entry on TOTPs in emails`,
+      "Body": `string: the body of sent emails, you add here a string "{{nonce}}" that will be replaced by the nonce once the email is sent, see wiki entry on noncess in emails`,
       "BodyType":  `string: type of message body (ie. "plain" for plaintext and "html" for HTML)`
     }
   }
@@ -87,7 +85,7 @@ To change the url/port at which the server runs (default of http://localhost:500
 # Misc
 
 * By default, an in-memory distributed ASP.NET Core cache used. This could easily be replaced by another one such as Redis by changing the injected caching service in the ASP.NET Core IoC container & building from source.
-* For more information on the included templaing of TOTPs: https://github.com/PwdLess/PwdLess/wiki/Templating-&-TOTPs-in-emails
+* For more information on the included templaing of nonces: https://github.com/PwdLess/PwdLess/wiki/Templating-&-nonces-in-emails
 * For the JSON Schema of the configuration file: https://github.com/PwdLess/PwdLess/wiki/Configuration-JSON-Schema
 
 # Building from source
