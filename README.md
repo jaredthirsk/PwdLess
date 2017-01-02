@@ -82,6 +82,9 @@ This configuration could also be provided in the form of environment variables, 
 
 To change the url/port at which the server runs (default of http://localhost:5000), supply a command line argument of `--url` (ie. `--url http://localhost:9538`)
 
+## Rate limiting
+PwdLess uses the [AspNetCoreRateLimit](https://www.nuget.org/packages/AspNetCoreRateLimit/) package for IP-based rate limiting. Rate limiting is important to prevent users from spamming emails. Rate limiting is also configurable from `appsettings.json`: refer to the [official AspNetCoreRateLimit documentation](https://github.com/stefanprodan/AspNetCoreRateLimit/wiki/IpRateLimitMiddleware#setup) on how to do that. 
+
 # Misc
 
 * By default, an in-memory distributed ASP.NET Core cache used. This could easily be replaced by another one such as Redis by changing the injected caching service in the ASP.NET Core IoC container & building from source.
