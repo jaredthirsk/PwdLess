@@ -9,8 +9,6 @@ using System.Security.Claims;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
-// For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace PwdLess.Auth.Controllers
 {
     [Route("[controller]/[action]")]
