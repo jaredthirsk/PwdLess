@@ -34,7 +34,7 @@ namespace PwdLess.Auth.Services
         
         public async Task<string> CreateAndStoreNonce(string identifier)
         {
-            var token = CreateToken(identifier);
+            var token = CreateJwt(identifier);
             var nonce = GenerateNonce();
 
             await AddToCache(token, nonce);
@@ -77,7 +77,7 @@ namespace PwdLess.Auth.Services
             return cRString;
         }
         
-        private string CreateToken(string sub, Dictionary<string, object> claims = null)
+        private string CreateJwt(string sub, Dictionary<string, object> claims = null)
         {
             var payload = new Dictionary<string, object>
             {
@@ -113,7 +113,10 @@ namespace PwdLess.Auth.Services
         
         private long ToUnixTime(DateTime dateTime)
         {
-            return (int)(dateTime.ToUniversalTime().Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            return (int)(dateTime
+                .ToUniversalTime()
+                .Subtract(new DateTime(1970, 1, 1)))
+                .TotalSeconds;
         }
 
     }
