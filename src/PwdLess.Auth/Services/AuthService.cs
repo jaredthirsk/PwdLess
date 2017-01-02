@@ -66,12 +66,14 @@ namespace PwdLess.Auth.Services
             RandomNumberGenerator cRNG = RandomNumberGenerator.Create();
             cRNG.GetBytes(cRBytes);
 
-            string cRString = Convert.ToBase64String(cRBytes)
+            byte[] sha1 = SHA1.Create().ComputeHash(cRBytes);
+
+            string cRString = Convert.ToBase64String(sha1)
                 .Replace("+", "")
                 .Replace("=", "")
                 .Replace("/", "")
                 .Substring(0, maxLength);
-
+            
             return cRString;
         }
         
