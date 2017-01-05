@@ -25,11 +25,25 @@ A user provides their email address to your website (ie. JS client). In turn, it
 
 2. The user opens the nonce URL or enters the nonce into your app
 
-Once your website recieves the nonce the user recieved (by letting the user enter it manually or through query strings), you will begin requesting a JWT for the user. To do this, your website makes an API call to PwdLess's `/auth/nonceToToken?nonce=SUPPLIED_NONCE`. PwdLess will then respond with a signed JWT containing the user's email address.
+Once your website receives the nonce the user received (by letting the user enter it manually or through query strings), you will begin requesting a JWT for the user. To do this, your website makes an API call to PwdLess's `/auth/nonceToToken?nonce=SUPPLIED_NONCE`. PwdLess will then respond with a signed JWT containing the user's email address.
 
 3. You use the JWT to authenticate the user into your APIs
 
 Since it is not possible to change the contents of a signed JWT (given that you validate it in your APIs), you can now be certain of the user's identity & proceed by including the JWT in the authorization header of all subsequent requests made by your website.
+
+# FAQ
+
+* Can I use this with NodeJs, Django, RoR, Suave, Laravel, or any non-C# web framework?
+Absolutely! PwdLess is built to be platform-agnostic so you can use it with any language, framework, database, or operating system you want. You won't have to worry about maintaining any C# code since PwdLess is obtained as an executable that you just run to start a server; interacting with PwdLess internals is not necessary for customizing it since it is [fully configurable](#configuration) through environment variables or an external file.
+
+* What if a user's email is compromised?
+Email is a single point of failure for almost _all_ authentication systems, including the traditional email-password systems. This is because of password reset functionality in which an attacker can just reset your password by having access to your email. In fact, by using PwdLess you are _eliminating_ a point of failure (passwords)!
+
+* How come no database is used?
+PwdLess only authenticates users, with the end goal of providing them an access token that proves who they are. Once the access token has been issued, your client should make the necessary API calls to your database API solution (ie. if new user, store the user and prompt for extra details, else retrieve user data). This means PwdLess doesn't need to interact with any database & you're free to use solution you want.
+
+* Can I use other logins (Facebook, Twitter, GitHub, Email/Password, etc.) alongside PwdLess?
+Yes! PwdLess is fully independent of the rest of your tech stack, so using other login schemes should require 0 modification to PwdLess.
 
 # HTTP Endpoints
 PwdLess exposes the following HTTP API:
@@ -39,16 +53,16 @@ Arguments could be sent in a `GET` query string (as shown below), or as `POST` b
 * `GET /auth/sendNonce?identifier=[IDENTIFIER]` where `[IDENTIFIER]` is the user's email
   * creates a nonce/token pair, stores it in cache, and sends the nonce to `[IDENTIFIER]`
   * responds `200` once email has been sent
-  * responds `400` on any failiure (wrong email server settings, etc.)
+  * responds `400` on any failure (wrong email server settings, etc.)
 
 * `GET /auth/nonceToToken?nonce=[NONCE]` where `[NONCE]` is the nonce to exchange for a token 
   * searches cache for a token associated with given nonce
   * responds `200` with the JWT (plaintext) if token found
   * responds `404` with if the token wasn't found (ie. expired)
-  * responds `400` on any failiure
+  * responds `400` on any failure
 
 # Configuration
-The configration is in present in the root folder, in `appsettings.json`. This tells PwdLess about everything it needs to know to start working.
+The configuration is in present in the root folder, in `appsettings.json`. This tells PwdLess about everything it needs to know to start working.
 
 A description of each configuration item:
 ```
@@ -73,7 +87,7 @@ A description of each configuration item:
     },
     "EmailContents": {
       "Subject": `string: the subject of sent emails`,
-      "Body": `string: the body of sent emails, you add here a string "{{nonce}}" that will be replaced by the nonce once the email is sent, see wiki entry on noncess in emails`,
+      "Body": `string: the body of sent emails, you add here a string "{{nonce}}" that will be replaced by the nonce once the email is sent, see wiki entry on nonces in emails`,
       "BodyType":  `string: type of message body (ie. "plain" for plaintext and "html" for HTML)`
     }
   }
@@ -96,7 +110,7 @@ PwdLess uses the [AspNetCoreRateLimit](https://www.nuget.org/packages/AspNetCore
 This project is built on top of ASP.NET Core, which supports a variety of operating systems. Follow this guide for more information: https://docs.microsoft.com/en-us/dotnet/articles/core/deploying/.
 
 # Design goals
-PwdLess is designed to maximise ease of use and conveniece for both the developers and the users (even at the cost of not having more advanced features). With this in mind this, here are some of the rough aspects of PwdLess:
+PwdLess is designed to maximise ease of use and convenience for both the developers and the users (even at the cost of not having more advanced features). With this in mind this, here are some of the rough aspects of PwdLess:
 
 * Stateless - no database: PwdLess should preferably operate only with caches; this means PwdLess will not handle generating & storing refresh tokens (such functionality should be manually implemented if needed, or just use long-lived access tokens).
 * Platform-agnostic: PwdLess should not care about the rest of your tech stack, should only be an independent server functioning like a microservice
