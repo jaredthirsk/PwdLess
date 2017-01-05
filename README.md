@@ -43,9 +43,10 @@ Email is a single point of failure for almost _all_ authentication systems, incl
 
 * How come no database is used?
 
-PwdLess only authenticates users, with the end goal of providing them an access token that proves who they are. Once the access token has been issued, your client should make the necessary API calls to your database API solution (ie. if new user, store the user and prompt for extra details, else retrieve user data). This means PwdLess doesn't need to interact with any database & you're free to use solution you want.
+PwdLess only authenticates users, with the end goal of providing them an access token that proves who they are. Once the access token has been issued, your client should make the necessary API calls to your database API solution (ie. if new user, store the user and prompt for extra details, else retrieve user data). This means PwdLess doesn't need to interact with any database & you're free to use any solution you want.
 
 * Can I use other logins (Facebook, Twitter, GitHub, Email/Password, etc.) alongside PwdLess?
+
 Yes! PwdLess is fully independent of the rest of your tech stack, so using other login schemes should require 0 modification to PwdLess.
 
 # HTTP Endpoints
