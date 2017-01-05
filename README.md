@@ -34,12 +34,15 @@ Since it is not possible to change the contents of a signed JWT (given that you 
 # FAQ
 
 * Can I use this with NodeJs, Django, RoR, Suave, Laravel, or any non-C# web framework?
+
 Absolutely! PwdLess is built to be platform-agnostic so you can use it with any language, framework, database, or operating system you want. You won't have to worry about maintaining any C# code since PwdLess is obtained as an executable that you just run to start a server; interacting with PwdLess internals is not necessary for customizing it since it is [fully configurable](#configuration) through environment variables or an external file.
 
 * What if a user's email is compromised?
+
 Email is a single point of failure for almost _all_ authentication systems, including the traditional email-password systems. This is because of password reset functionality in which an attacker can just reset your password by having access to your email. In fact, by using PwdLess you are _eliminating_ a point of failure (passwords)!
 
 * How come no database is used?
+
 PwdLess only authenticates users, with the end goal of providing them an access token that proves who they are. Once the access token has been issued, your client should make the necessary API calls to your database API solution (ie. if new user, store the user and prompt for extra details, else retrieve user data). This means PwdLess doesn't need to interact with any database & you're free to use solution you want.
 
 * Can I use other logins (Facebook, Twitter, GitHub, Email/Password, etc.) alongside PwdLess?
