@@ -69,7 +69,7 @@ namespace PwdLess.Auth.Controllers
             }
             catch (IndexOutOfRangeException)
             {
-                _logger.LogDebug($"A requested nonce's token was not found. Nonce: {nonce}");
+                _logger.LogDebug($"A requested nonce's token was not found. Nonce: {nonce}.");
                 return NotFound("Nonce not found.");
             }
             catch (Exception e)
