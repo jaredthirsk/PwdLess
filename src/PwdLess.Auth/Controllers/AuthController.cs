@@ -82,8 +82,12 @@ namespace PwdLess.Auth.Controllers
         }
 
         [Authorize]
+        /// Validates tokens sent via authorization header
+        /// Eg. Authorization: Bearer [token]
+        ///     client_id    : defaultClient
         public IActionResult ValidateToken()
         {
+
             var sb = new StringBuilder();
             sb.Append("{");
             foreach (var claim in HttpContext.User.Claims)

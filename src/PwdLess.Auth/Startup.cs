@@ -64,7 +64,7 @@ namespace PwdLess.Auth
             app.UseIpRateLimiting();
 
             var tokenSecretKey = Encoding.UTF8.GetBytes(Configuration["PwdLess:Jwt:SecretKey"]);
- 
+
             var tokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -72,7 +72,8 @@ namespace PwdLess.Auth
                 IssuerSigningKey = new SymmetricSecurityKey(tokenSecretKey),
                 ValidateIssuer = true,
                 ValidIssuer = Configuration["PwdLess:Jwt:Issuer"],
-                ValidateAudience = false,
+                ValidateAudience = true,
+                ValidAudience = Configuration["PwdLess:Jwt:Audience"],
                 ValidateLifetime = true,
                 RequireExpirationTime = true,
                 ClockSkew = new TimeSpan(0, 5, 0),
