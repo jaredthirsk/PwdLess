@@ -80,5 +80,20 @@ namespace PwdLess.Auth.Controllers
             }
 
         }
+
+        [Authorize]
+        public IActionResult ValidateToken()
+        {
+            var sb = new StringBuilder();
+            sb.Append("{");
+            foreach (var claim in HttpContext.User.Claims)
+            {
+                sb.Append($"\n\t\"{claim.Type.ToString()}\" : \"{claim.Value.ToString()}\",");
+            }
+            sb.Length--;
+            sb.Append("\n}");
+            sb.Replace("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "sub");
+            return Ok(sb.ToString());
+        }
     }
 }
