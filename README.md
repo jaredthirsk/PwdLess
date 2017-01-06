@@ -96,7 +96,10 @@ A description of each configuration item:
     }
   }
 ```
+A sample file `appsettings.SAMPLE.json` is provided as an example (be sure to remove the "`.SAMPLE`" before building or running the server).
+
 This configuration could also be provided in the form of environment variables, where nesting is acheived by using colons (ie. "EmailContents:Subject").
+
 
 To change the url/port at which the server runs (default of http://localhost:5000), supply a command line argument of `--url` (ie. `--url http://localhost:9538`)
 
@@ -112,6 +115,9 @@ PwdLess uses the [AspNetCoreRateLimit](https://www.nuget.org/packages/AspNetCore
 # Building from source
 
 This project is built on top of ASP.NET Core, which supports a variety of operating systems. Follow this guide for more information: https://docs.microsoft.com/en-us/dotnet/articles/core/deploying/.
+
+There's also a simple build script: `src/PwdLess.Auth/BUILD.cmd`. Running this will create builds in `src/PwdLess.Auth/bin/release/netcoreapp1.0/` for various operating systems. Editing the build script to add/remove OSes is trivial, just refer to the [Runtime Identifier Catalogue](https://docs.microsoft.com/en-us/dotnet/articles/core/rid-catalog).
+
 
 # Design goals
 PwdLess is designed to maximise ease of use and convenience for both the developers and the users (even at the cost of not having more advanced features). With this in mind this, here are some of the rough aspects of PwdLess:
