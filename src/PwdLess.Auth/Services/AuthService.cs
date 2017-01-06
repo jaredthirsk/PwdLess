@@ -18,6 +18,7 @@ namespace PwdLess.Auth.Services
     {
         Task<string> CreateAndStoreNonce(string identifier);
         Task<string> GetTokenFromNonce(string nonce);
+        string DecodeValidateJwt(string token);
     }
 
 
@@ -57,7 +58,16 @@ namespace PwdLess.Auth.Services
                 throw new IndexOutOfRangeException("Nonce doesn't exist.");
             }
         }
-        
+
+        public string DecodeValidateJwt(string token)
+        {
+            string json = Jose.JWT.Decode(token,
+                Encoding.UTF8.GetBytes(_config["PwdLess:Jwt:SecretKey"]),
+                JwsAlgorithm.HS256);
+
+            return json;
+        }
+
         private string GenerateNonce()
         {
             // populate a byte[] with crypto RNG bytes
