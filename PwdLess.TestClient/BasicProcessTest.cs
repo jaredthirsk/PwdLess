@@ -19,8 +19,7 @@ namespace PwdLess.TestClient
             var nonce = GetNonceFromEmail("dd9d920ead4fa66064e4d110f3878b13");
             GetJwtUsingNonce(nonce);
         }
-        
-        
+
         private static void LetPwdLessSendNonce(string identifier)
         {
             var client = new RestClient("http://localhost:5000");
@@ -44,10 +43,10 @@ namespace PwdLess.TestClient
             var client = new RestClient("https://api.temp-mail.org/request/mail/id/");
             var request = new RestRequest($"{emailMd5Hash}/format/json/", Method.GET);
 
-            var response = client.Execute<dynamic>(request);
+            var response = client.Execute<List<dynamic>>(request);
 
-            var body = response.Data[0]["mail_text"];
-            var nonce = response.Data[0]["mail_text"]
+            var body = response.Data[response.Data.Count - 1]["mail_text"];
+            var nonce = response.Data[response.Data.Count - 1]["mail_text"]
                 .Split(new[] { "code: " }, 2, StringSplitOptions.None)[1]
                 .Replace(".", "")
                 .Trim()
