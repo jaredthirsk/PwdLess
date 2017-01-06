@@ -87,17 +87,21 @@ namespace PwdLess.Auth.Controllers
         ///     client_id    : defaultClient
         public IActionResult ValidateToken()
         {
-
+            // Convert claims to JSON
             var sb = new StringBuilder();
-            sb.Append("{");
+            sb.Append("{"); // add opening parens
             foreach (var claim in HttpContext.User.Claims)
             {
+                // add "key : value,"
                 sb.Append($"\n\t\"{claim.Type.ToString()}\" : \"{claim.Value.ToString()}\",");
             }
-            sb.Length--;
-            sb.Append("\n}");
+            sb.Length--; // remove last comma
+            sb.Append("\n}"); // add closing parens
             sb.Replace("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "sub");
-            return Ok(sb.ToString());
+            var claimsJson = sb.ToString();
+
+
+            return Ok(claimsJson);
         }
     }
 }
