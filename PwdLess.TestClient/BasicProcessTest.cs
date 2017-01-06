@@ -66,7 +66,7 @@ namespace PwdLess.TestClient
 
         private void GetJwtUsingNonce(string nonce)
         {
-            var client = new RestClient("http://localhost:5000");
+            var client = new RestClient("http://localhost:5000/");
             var request = new RestRequest("auth/nonceToToken", Method.POST);
             request.AddParameter("nonce", nonce);
 

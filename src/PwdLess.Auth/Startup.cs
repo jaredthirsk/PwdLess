@@ -63,6 +63,28 @@ namespace PwdLess.Auth
 
             app.UseIpRateLimiting();
 
+            var tokenSecretKey = Encoding.UTF8.GetBytes(Configuration["PwdLess:Jwt:SecretKey"]);
+ 
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                RequireSignedTokens = true,
+                IssuerSigningKey = new SymmetricSecurityKey(tokenSecretKey),
+                ValidateIssuer = true,
+                ValidIssuer = Configuration["PwdLess:Jwt:Issuer"],
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                RequireExpirationTime = true,
+                ClockSkew = new TimeSpan(0, 5, 0),
+                ValidateActor = false,
+            };
+ 
+            app.UseJwtBearerAuthentication(new JwtBearerOptions
+            {
+                AutomaticAuthenticate = true,
+                TokenValidationParameters = tokenValidationParameters,
+            });
+
             app.UseMvc();
         }
     }

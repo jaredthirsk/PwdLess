@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace PwdLess.Auth.Controllers
 {
@@ -71,29 +72,6 @@ namespace PwdLess.Auth.Controllers
             {
                 _logger.LogDebug($"A requested nonce's token was not found. Nonce: {nonce}.");
                 return NotFound("Nonce not found.");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-                return BadRequest("Something went wrong.");
-            }
-
-        }
-
-        public IActionResult ValidateToken(string token)
-        {
-            try
-            {
-                // Decode & Validate a JWT
-                var jwtJson = _authService.DecodeValidateJwt(token);
-
-                _logger.LogDebug($"Token sent: {token}, decoded JWT sent: {jwtJson}");
-                return Ok(jwtJson);
-            }
-            catch (Jose.IntegrityException)
-            {
-                _logger.LogDebug($"A token with an invalid signiture has been provided. Token: {token}.");
-                return BadRequest("Invalid Signiture.");
             }
             catch (Exception e)
             {
