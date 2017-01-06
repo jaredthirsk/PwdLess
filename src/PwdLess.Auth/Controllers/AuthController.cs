@@ -46,8 +46,8 @@ namespace PwdLess.Auth.Controllers
                 // send message user
                 await _senderService.SendAsync(identifier, body);
 
-                _logger.LogDebug($"A message was sent to: {identifier}. It contained the body: {body}");
-                return Ok($"Success! Sent Nonce to: {identifier}");
+                _logger.LogDebug($"A message was sent to: {identifier}. It contained the body: {body}.");
+                return Ok($"Success! Sent Nonce to: {identifier}.");
             }
             catch (Exception e)
             {
@@ -64,13 +64,36 @@ namespace PwdLess.Auth.Controllers
                 // Get a Nonce's associated token
                 var token = await _authService.GetTokenFromNonce(nonce);
 
-                _logger.LogDebug("Nonce: {nonce}, token sent: {token}");
+                _logger.LogDebug($"Nonce: {nonce}, token sent: {token}");
                 return Ok(token);
             }
             catch (IndexOutOfRangeException)
             {
                 _logger.LogDebug($"A requested nonce's token was not found. Nonce: {nonce}.");
                 return NotFound("Nonce not found.");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.ToString());
+                return BadRequest("Something went wrong.");
+            }
+
+        }
+
+        public IActionResult ValidateToken(string token)
+        {
+            try
+            {
+                // Decode & Validate a JWT
+                var jwtJson = _authService.DecodeValidateJwt(token);
+
+                _logger.LogDebug($"Token sent: {token}, decoded JWT sent: {jwtJson}");
+                return Ok(jwtJson);
+            }
+            catch (Jose.IntegrityException)
+            {
+                _logger.LogDebug($"A token with an invalid signiture has been provided. Token: {token}.");
+                return BadRequest("Invalid Signiture.");
             }
             catch (Exception e)
             {
