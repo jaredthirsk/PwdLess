@@ -8,12 +8,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using PwdLess.Auth.Services;
+using PwdLess.Services;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using AspNetCoreRateLimit;
 
-namespace PwdLess.Auth
+namespace PwdLess
 {
     public class Startup
     {

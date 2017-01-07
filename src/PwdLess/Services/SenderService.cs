@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 
-namespace PwdLess.Auth.Services
+namespace PwdLess.Services
 {
     /// <summary>
     /// Handles sending a message with a "body" to an "address".

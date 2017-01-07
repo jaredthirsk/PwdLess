@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PwdLess.Auth.Services
+namespace PwdLess.Services
 {
     /// <summary>
     /// Handles creating nonces and tokens.

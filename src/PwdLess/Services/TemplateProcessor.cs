@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PwdLess.Auth.Services
+namespace PwdLess.Services
 {
     /// <summary>
     /// Converts a template in configuration to a complete string, given a token.

@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using PwdLess.Auth.Services;
+using PwdLess.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using System.Text;
 
-namespace PwdLess.Auth.Controllers
+namespace PwdLess.Controllers
 {
     [Route("[controller]/[action]")]
     public class AuthController : Controller
