@@ -7,20 +7,21 @@ using RestSharp.Deserializers;
 
 namespace PwdLess.TestClient
 {
+    /// <summary>
+    /// BE SURE PwdLess IS RUNNING FIRST.
+    /// ONLY RUN THE ORDERED TEST.
+    /// DELTE THE EMAIL INBOX BEFORE STARTING TEST: TempMail RETURNS EMAILS IN ARBITRARY ORDER.
+    /// </summary>
     [TestClass]
     public class BasicProcessTest
     {
-        [TestMethod]
-        public void BasicProcessWorks()
-        {
-            // This uses "TempMail" for a DEA on the fly
-            // MAKE SURE PwdLess IS RUNNING BEFORE RUNNING TESTS
-            LetPwdLessSendNonce("pwdless@fulvie.com");
-            var nonce = GetNonceFromEmail("dd9d920ead4fa66064e4d110f3878b13");
-            GetJwtUsingNonce(nonce);
-        }
+        public static string identifier { get; set; } = "pwdless@fulvie.com";
+        public static string emailMd5Hash { get; set; } = "dd9d920ead4fa66064e4d110f3878b13";
+        public static string nonce { get; set; }
+        public static string token { get; set; }
 
-        private static void LetPwdLessSendNonce(string identifier)
+        [TestMethod]
+        public void FirstLetPwdLessSendNonce()
         {
             var client = new RestClient("http://localhost:5000");
             var request = new RestRequest("auth/sendNonce", Method.POST);
@@ -38,15 +39,16 @@ namespace PwdLess.TestClient
                                  Status: {status}");
         }
 
-        private string GetNonceFromEmail(string emailMd5Hash)
+        [TestMethod]
+        public void SecondGetNonceFromEmail()
         {
             var client = new RestClient("https://api.temp-mail.org/request/mail/id/");
             var request = new RestRequest($"{emailMd5Hash}/format/json/", Method.GET);
 
             var response = client.Execute<List<dynamic>>(request);
 
-            var body = response.Data[response.Data.Count - 1]["mail_text"];
-            var nonce = response.Data[response.Data.Count - 1]["mail_text"]
+            var body = response.Data[0]["mail_text"];
+            nonce = response.Data[0]["mail_text"]
                 .Split(new[] { "code: " }, 2, StringSplitOptions.None)[1]
                 .Replace(".", "")
                 .Trim()
@@ -60,39 +62,48 @@ namespace PwdLess.TestClient
                                  Body: {body}
                                  Nonce: {nonce}
                                  Status: {status}");
-            return nonce;
         }
 
-        private void GetJwtUsingNonce(string nonce)
+        [TestMethod]
+        public void ThirdGetJwtUsingNonce()
         {
             var client = new RestClient("http://localhost:5000/");
             var request = new RestRequest("auth/nonceToToken", Method.POST);
+            Console.WriteLine($"NONCE: {nonce}");
             request.AddParameter("nonce", nonce);
+
+            IRestResponse response = client.Execute(request);
+            token = response.Content;
+            var status = response.StatusCode;
+
+            Assert.AreEqual(status, System.Net.HttpStatusCode.OK);
+            Assert.AreEqual(token.Split('.').Length, 3);
+
+            Console.WriteLine($@"Request to get JWT from nonce.
+                                 Nonce Sent: {nonce} 
+                                 Response (JWT): {token}
+                                 Status: {status}");
+        }
+
+        [TestMethod]
+        public void FourthDecodeValidateJwt()
+        {
+            var client = new RestClient("http://localhost:5000/");
+            var request = new RestRequest("auth/validateToken", Method.POST);
+            request.AddHeader("Authorization", $"Bearer {token}");
 
             IRestResponse response = client.Execute(request);
             var content = response.Content;
             var status = response.StatusCode;
 
             Assert.AreEqual(status, System.Net.HttpStatusCode.OK);
-            Assert.AreEqual(content.Split('.').Length, 3);
 
-            Console.WriteLine($@"Request to get JWT from nonce.
-                                 Nonce Sent: {nonce} 
-                                 Response (JWT): {content}
+            Console.WriteLine($@"Authorizing to PwdLess using JWT.
+                                 JWT Sent: {token} 
+                                 Response (JWT claims): {content}
                                  Status: {status}");
         }
 
-
-    }
-    class TempMail
-    {
-        public List<Message> Messages { get; set; }
-    }
-
-    class Message
-    {
-        public string mail_subject { get; set; }
-        public string mail_text { get; set; }
     }
     
 }
