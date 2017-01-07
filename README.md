@@ -53,6 +53,7 @@ Yes! PwdLess is fully independent of the rest of your tech stack, so using other
 PwdLess exposes the following HTTP API:
 
 Arguments could be sent in a `GET` query string (as shown below), or as `POST` body values.
+Note that "token" refers to the generated JWT.
 
 * `GET /auth/sendNonce?identifier=[IDENTIFIER]` where `[IDENTIFIER]` is the user's email
   * creates a nonce/token pair, stores it in cache, and sends the nonce to `[IDENTIFIER]`
@@ -63,7 +64,15 @@ Arguments could be sent in a `GET` query string (as shown below), or as `POST` b
   * searches cache for a token associated with given nonce
   * responds `200` with the JWT (plaintext) if token found
   * responds `404` with if the token wasn't found (ie. expired)
-  * responds `400` on any failure
+  * responds `400` on other failures
+
+* `GET /auth/validateToken`
+   with header: `Authorization: Bearer [TOKEN]` where `[TOKEN]` is a token to decode & validate
+   * this is an optional feature where you can authorize into PwdLess with a token to decode & validate it
+     * validates signing key, issuer, audience, and expiry
+   * responds `200` with the token's claims in JSON if the token is valid
+   * responds `401` if token is invalid in any way
+   * responds `400` on other failures
 
 # Configuration
 The configuration is in present in the root folder, in `appsettings.json`. This tells PwdLess about everything it needs to know to start working.
