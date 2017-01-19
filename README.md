@@ -132,6 +132,7 @@ PwdLess is designed to maximise ease of use and convenience for both the develop
 
 * Stateless - no database: PwdLess should preferably operate only with caches; this means PwdLess will not handle generating & storing refresh tokens (such functionality should be manually implemented if needed, or just use long-lived access tokens).
 * Platform-agnostic: PwdLess should not care about the rest of your tech stack, should only be an independent server functioning like a microservice
+* OS-agnostic: PwdLess should work on any OS supported by .NET Core (ie. no OS-specific code).
 * It should not be necessary to edit PwdLess source code: all necessary configuration should be present outside the code (ie. in `appsettings.json`)
 * Advanced customization, however, should not be added to configuration: advanced configuration to customise non-PwdLess aspects such as JOSE-JWT & MailKit should preferably not be customisable through configuration, instead, editing source code would be the preferred way
 
