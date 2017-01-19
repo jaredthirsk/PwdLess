@@ -11,7 +11,7 @@ Getting started with PwdLess is easy:
 1. Download a [PwdLess release](https://github.com/PwdLess/PwdLess/releases) for your OS of choice
  > if you don't find a build for your OS, consider [building from source](#building-from-source)
 
-2. Add [configuration](#configuration) to the included `appsettings.json` file
+2. Add [configuration](#configuration) to an `appsettings.json` file
 
 3. Run PwdLess & [test it](#http-endpoints) to see if it works 
 
@@ -75,7 +75,9 @@ Note that "token" refers to the generated JWT.
    * responds `400` on other failures
 
 # Configuration
-The configuration is in present in the root folder, in `appsettings.json`. This tells PwdLess about everything it needs to know to start working.
+The configuration should be present in the same directory as PwdLess, in `appsettings.json`. This tells PwdLess about everything it needs to know to start working.
+
+A sample file `appsettings.SAMPLE.json` is provided as an example (be sure to remove the "`.SAMPLE`" before building or running the server). The sample file also contains working logging & rate limiting configuration.
 
 A description of each configuration item:
 ```
@@ -101,14 +103,11 @@ A description of each configuration item:
     "EmailContents": {
       "Subject": `string: the subject of sent emails`,
       "Body": `string: the body of sent emails, you add here a string "{{nonce}}" that will be replaced by the nonce once the email is sent, see wiki entry on nonces in emails`,
-      "BodyType":  `string: type of message body (ie. "plain" for plaintext and "html" for HTML)`
+      "BodyType":  `string: type of message body (ie. "plain" for plaintext and "htm" for HTML)`
     }
   }
 ```
-A sample file `appsettings.SAMPLE.json` is provided as an example (be sure to remove the "`.SAMPLE`" before building or running the server).
-
-This configuration could also be provided in the form of environment variables, where nesting is acheived by using colons (ie. "EmailContents:Subject").
-
+This configuration could also be provided in the form of environment variables, where nesting is acheived by using colons (ie. "EmailContents:Subject"). 
 
 To change the url/port at which the server runs (default of http://localhost:5000), supply a command line argument of `--url` (ie. `--url http://localhost:9538`)
 
@@ -133,6 +132,7 @@ PwdLess is designed to maximise ease of use and convenience for both the develop
 
 * Stateless - no database: PwdLess should preferably operate only with caches; this means PwdLess will not handle generating & storing refresh tokens (such functionality should be manually implemented if needed, or just use long-lived access tokens).
 * Platform-agnostic: PwdLess should not care about the rest of your tech stack, should only be an independent server functioning like a microservice
+* OS-agnostic: PwdLess should work on any OS supported by .NET Core (ie. no OS-specific code).
 * It should not be necessary to edit PwdLess source code: all necessary configuration should be present outside the code (ie. in `appsettings.json`)
 * Advanced customization, however, should not be added to configuration: advanced configuration to customise non-PwdLess aspects such as JOSE-JWT & MailKit should preferably not be customisable through configuration, instead, editing source code would be the preferred way
 
