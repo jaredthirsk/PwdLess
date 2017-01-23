@@ -97,7 +97,7 @@ namespace PwdLess.Controllers
             }
             sb.Length--; // remove last comma
             sb.Append("\n}"); // add closing parens
-            sb.Replace("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "sub");
+            //sb.Replace("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "sub");
             var claimsJson = sb.ToString();
 
 
