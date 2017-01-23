@@ -18,18 +18,21 @@ namespace PwdLess.Controllers
         private IAuthService _authService;
         private ISenderService _senderService;
         private ITemplateProcessor _templateProcessor;
+        private IActionService _actionService;
         private IDistributedCache _cache;
         private ILogger _logger;
 
         public AuthController(IAuthService authService, 
             ISenderService senderService, 
             ITemplateProcessor templateProcessor, 
+            IActionService actionService,
             IDistributedCache cache,
             ILogger<AuthController> logger)
         {
             _authService = authService;
             _senderService = senderService;
             _templateProcessor = templateProcessor;
+            _actionService = actionService;
             _cache = cache;
             _logger = logger;
         }
