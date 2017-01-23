@@ -7,7 +7,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PwdLess.Auth.Services
+namespace PwdLess.Services
 {
     /// <summary>
     /// Handles running the HTTP Actions defined in configuration.
