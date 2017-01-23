@@ -46,7 +46,7 @@ namespace PwdLess
             services.AddSingleton<IIpPolicyStore, DistributedCacheIpPolicyStore>();
             services.AddSingleton<IRateLimitCounterStore, DistributedCacheRateLimitCounterStore>();
 
-            // framework services.
+            // framework services
             services.AddMvc();
         }
 
@@ -63,6 +63,7 @@ namespace PwdLess
 
             app.UseIpRateLimiting();
 
+            #region Optional JWT Validation feature
             var tokenSecretKey = Encoding.UTF8.GetBytes(Configuration["PwdLess:Jwt:SecretKey"]);
 
             var tokenValidationParameters = new TokenValidationParameters
@@ -85,6 +86,7 @@ namespace PwdLess
                 AutomaticAuthenticate = true,
                 TokenValidationParameters = tokenValidationParameters,
             });
+            #endregion
 
             app.UseMvc();
         }
