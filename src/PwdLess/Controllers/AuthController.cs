@@ -71,8 +71,11 @@ namespace PwdLess.Controllers
         {
             try
             {
-                // Get a Nonce's associated token
+                // get a Nonce's associated token
                 var token = await _authService.GetTokenFromNonce(nonce);
+
+                // run the BeforeSendingToken action, discard result
+                await _actionService.BeforeSendingToken(token);
 
                 _logger.LogDebug($"Nonce: {nonce}, token sent: {token}");
                 return Ok(token);
