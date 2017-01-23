@@ -41,7 +41,7 @@ namespace PwdLess.Services
 
             // throw an exception if not successful
             if (!response.IsSuccessStatusCode)
-                throw new Exception("Unsuccessful status code recieved from action.");
+                throw new InvalidIdentifierException(identifier);
             else
                 return await response.Content.ReadAsStringAsync();
 
@@ -63,5 +63,11 @@ namespace PwdLess.Services
             else
                 return await response.Content.ReadAsStringAsync();
         }
+    }
+
+    public class InvalidIdentifierException : Exception
+    {
+        public InvalidIdentifierException(string identifier)
+            : base($"Identefier invalid: {identifier}") { }
     }
 }

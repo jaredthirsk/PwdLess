@@ -43,16 +43,22 @@ namespace PwdLess.Controllers
             {
                 // create a nonce/token pair, store them, get Nonce
                 var nonce = await _authService.CreateAndStoreNonce(identifier);
-                
-                // create body for message to be sent to user
-                var body = _templateProcessor.ProcessTemplate(nonce);
 
-                // send message user
+                // run the BeforeSendingNonce action, discard result
+                await _actionService.BeforeSendingNonce(identifier);
+
+                // create body for message to be sent to user & send it
+                var body = _templateProcessor.ProcessTemplate(nonce);
                 await _senderService.SendAsync(identifier, body);
 
                 _logger.LogDebug($"A message was sent to: {identifier}. It contained the body: {body}.");
                 return Ok($"Success! Sent Nonce to: {identifier}.");
             }
+            catch (InvalidIdentifierException e)
+            {
+                _logger.LogError(e.ToString());
+                return BadRequest("Identifier invalid.");
+            }  
             catch (Exception e)
             {
                 _logger.LogError(e.ToString());
