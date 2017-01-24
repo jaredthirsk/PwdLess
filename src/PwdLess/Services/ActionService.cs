@@ -30,6 +30,11 @@ namespace PwdLess.Services
         public async Task<string> BeforeSendingNonce(string identifier)
         {
             string uri = _config["PwdLess:Actions:BeforeSendingNonce"];
+
+            // this feature is opt-in
+            if (uri == null || uri.Length == 0)
+                return "";
+
             HttpContent content = new StringContent($"{{\"identifier\":\"{identifier}\"}}", 
                                             Encoding.UTF8,
                                             "application/json");
@@ -50,6 +55,11 @@ namespace PwdLess.Services
         public async Task<string> BeforeSendingToken(string token)
         {
             string uri = _config["PwdLess:Actions:BeforeSendingToken"];
+
+            // this feature is opt-in
+            if (uri == null || uri.Length == 0)
+                return "";
+
             var authHeader = new AuthenticationHeaderValue("Bearer", token);
             HttpResponseMessage response;
 
