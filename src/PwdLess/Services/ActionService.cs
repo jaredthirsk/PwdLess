@@ -63,9 +63,9 @@ namespace PwdLess.Services
             var authHeader = new AuthenticationHeaderValue("Bearer", token);
             HttpResponseMessage response;
 
-            // send the GET request with auth header
+            // send the POST request with auth header
             using (var client = new HttpClient() { DefaultRequestHeaders = { Authorization = authHeader } })
-                response = await client.GetAsync(uri);
+                response = await client.PostAsync(uri, new StringContent(""));
 
             // throw an exception if not successful
             if (!response.IsSuccessStatusCode)
