@@ -37,18 +37,18 @@ namespace PwdLess.Controllers
             _logger = logger;
         }
         
-        public async Task<IActionResult> SendNonce(string identifier)
+        public async Task<IActionResult> SendNonce(string identifier, string type = "default")
         {
             try
             {
                 // create a nonce/token pair, store them, get Nonce
-                var nonce = await _authService.CreateAndStoreNonce(identifier);
+                var nonce = await _authService.CreateAndStoreNonce(identifier, type);
 
                 // run the BeforeSendingNonce action, discard result
                 await _actionService.BeforeSendingNonce(identifier);
 
                 // create body for message to be sent to user & send it
-                var body = _templateProcessor.ProcessTemplate(nonce);
+                var body = _templateProcessor.ProcessTemplate(nonce, identifier, type);
                 await _senderService.SendAsync(identifier, body);
 
                 _logger.LogDebug($"A message was sent to: {identifier}. It contained the body: {body}.");

@@ -16,7 +16,7 @@ namespace PwdLess.Services
     /// </summary>
     public interface IAuthService
     {
-        Task<string> CreateAndStoreNonce(string identifier);
+        Task<string> CreateAndStoreNonce(string identifier, string type = "default");
         Task<string> GetTokenFromNonce(string nonce);
     }
 
@@ -31,9 +31,12 @@ namespace PwdLess.Services
             _cache = cache;
         }
         
-        public async Task<string> CreateAndStoreNonce(string identifier)
+        public async Task<string> CreateAndStoreNonce(string identifier, string type)
         {
-            var token = CreateJwt(identifier);
+            var token = CreateJwt(identifier, new Dictionary<string, object>
+            {
+                { "type", type }
+            });
             var nonce = GenerateNonce();
 
             await AddToCache(token, nonce);
