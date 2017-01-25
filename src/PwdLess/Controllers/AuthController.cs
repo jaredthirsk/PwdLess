@@ -44,11 +44,11 @@ namespace PwdLess.Controllers
                 // create a nonce/token pair, store them, get Nonce
                 var nonce = await _authService.CreateAndStoreNonce(identifier, type);
 
-                // run the BeforeSendingNonce callback, discard result
-                await _callbackService.BeforeSendingNonce(identifier);
+                // run the BeforeSendingNonce callback, put result in message body
+                var extraBodyData = await _callbackService.BeforeSendingNonce(identifier, type) ?? "{}";
 
                 // create body for message to be sent to user & send it
-                var body = _templateProcessor.ProcessTemplate(nonce, identifier, type);
+                var body = _templateProcessor.ProcessTemplate(nonce, extraBodyData, type);
                 await _senderService.SendAsync(identifier, body);
 
                 _logger.LogDebug($"A message was sent to: {identifier}. It contained the body: {body}.");

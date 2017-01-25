@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace PwdLess.Services
     /// </summary>
     public interface ICallbackService
     {
-        Task<string> BeforeSendingNonce(string identifier);
+        Task<string> BeforeSendingNonce(string identifier, string type);
         Task<string> BeforeSendingToken(string token);
     }
 
@@ -27,7 +28,7 @@ namespace PwdLess.Services
             _config = config;
         }
 
-        public async Task<string> BeforeSendingNonce(string identifier)
+        public async Task<string> BeforeSendingNonce(string identifier, string type)
         {
             string uri = _config["PwdLess:Callbacks:BeforeSendingNonce"];
 
@@ -35,9 +36,13 @@ namespace PwdLess.Services
             if (uri == null || uri.Length == 0)
                 return "";
 
-            HttpContent content = new StringContent($"{{\"identifier\":\"{identifier}\"}}", 
-                                            Encoding.UTF8,
-                                            "application/json");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(new
+                                                    {
+                                                        Identifier = identifier,
+                                                        Type = type
+                                                    }), 
+                                                    Encoding.UTF8,
+                                                    "application/json");
             HttpResponseMessage response;
 
             // send the POST request
