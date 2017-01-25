@@ -18,21 +18,21 @@ namespace PwdLess.Controllers
         private IAuthService _authService;
         private ISenderService _senderService;
         private ITemplateProcessor _templateProcessor;
-        private IActionService _actionService;
+        private ICallbackService _callbackService;
         private IDistributedCache _cache;
         private ILogger _logger;
 
         public AuthController(IAuthService authService, 
             ISenderService senderService, 
             ITemplateProcessor templateProcessor, 
-            IActionService actionService,
+            ICallbackService callbackService,
             IDistributedCache cache,
             ILogger<AuthController> logger)
         {
             _authService = authService;
             _senderService = senderService;
             _templateProcessor = templateProcessor;
-            _actionService = actionService;
+            _callbackService = callbackService;
             _cache = cache;
             _logger = logger;
         }
@@ -44,8 +44,8 @@ namespace PwdLess.Controllers
                 // create a nonce/token pair, store them, get Nonce
                 var nonce = await _authService.CreateAndStoreNonce(identifier, type);
 
-                // run the BeforeSendingNonce action, discard result
-                await _actionService.BeforeSendingNonce(identifier);
+                // run the BeforeSendingNonce callback, discard result
+                await _callbackService.BeforeSendingNonce(identifier);
 
                 // create body for message to be sent to user & send it
                 var body = _templateProcessor.ProcessTemplate(nonce, identifier, type);
@@ -74,8 +74,8 @@ namespace PwdLess.Controllers
                 // get a Nonce's associated token
                 var token = await _authService.GetTokenFromNonce(nonce);
 
-                // run the BeforeSendingToken action, discard result
-                await _actionService.BeforeSendingToken(token);
+                // run the BeforeSendingToken callback, discard result
+                await _callbackService.BeforeSendingToken(token);
 
                 _logger.LogDebug($"Nonce: {nonce}, token sent: {token}");
                 return Ok(token);

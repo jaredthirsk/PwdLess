@@ -10,26 +10,26 @@ using System.Threading.Tasks;
 namespace PwdLess.Services
 {
     /// <summary>
-    /// Handles running the HTTP Actions defined in configuration.
+    /// Handles running the HTTP Callbacks defined in configuration.
     /// </summary>
-    public interface IActionService
+    public interface ICallbackService
     {
         Task<string> BeforeSendingNonce(string identifier);
         Task<string> BeforeSendingToken(string token);
     }
 
-    public class ActionService : IActionService
+    public class CallbackService : ICallbackService
     {
         private IConfigurationRoot _config;
 
-        public ActionService(IConfigurationRoot config)
+        public CallbackService(IConfigurationRoot config)
         {
             _config = config;
         }
 
         public async Task<string> BeforeSendingNonce(string identifier)
         {
-            string uri = _config["PwdLess:Actions:BeforeSendingNonce"];
+            string uri = _config["PwdLess:Callbacks:BeforeSendingNonce"];
 
             // this feature is opt-in
             if (uri == null || uri.Length == 0)
@@ -54,7 +54,7 @@ namespace PwdLess.Services
 
         public async Task<string> BeforeSendingToken(string token)
         {
-            string uri = _config["PwdLess:Actions:BeforeSendingToken"];
+            string uri = _config["PwdLess:Callbacks:BeforeSendingToken"];
 
             // this feature is opt-in
             if (uri == null || uri.Length == 0)
@@ -69,7 +69,7 @@ namespace PwdLess.Services
 
             // throw an exception if not successful
             if (!response.IsSuccessStatusCode)
-                throw new Exception("Unsuccessful status code recieved from action.");
+                throw new Exception($"Unsuccessful status code recieved from callback: {uri}.");
             else
                 return await response.Content.ReadAsStringAsync();
         }
@@ -78,6 +78,6 @@ namespace PwdLess.Services
     public class InvalidIdentifierException : Exception
     {
         public InvalidIdentifierException(string identifier)
-            : base($"Identefier invalid: {identifier}") { }
+            : base($"Identifier invalid: {identifier}") { }
     }
 }
