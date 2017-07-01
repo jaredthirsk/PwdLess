@@ -1,18 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{46204F4B-3281-4D4C-A123-FEF8E0189251}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FBAD37C3-8C5E-4017-B72D-F9AC3824B72E}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PwdLess.TestClient", "PwdLess.TestClient\PwdLess.TestClient.csproj", "{A1A7D129-AE94-48B4-8CF4-D59125A54838}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "PwdLess", "src\PwdLess\PwdLess.xproj", "{260DF228-B4C4-4632-B701-3561118053E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PwdLess", "src\PwdLess\PwdLess.csproj", "{260DF228-B4C4-4632-B701-3561118053E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
