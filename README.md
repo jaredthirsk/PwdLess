@@ -105,9 +105,9 @@ A description of each configuration item:
       "Body": `string: the body of sent emails, you add here a string "{{nonce}}" that will be replaced by the nonce once the email is sent, see wiki entry on nonces in emails`,
       "BodyType":  `string: type of message body (ie. "plain" for plaintext and "htm" for HTML)`
     }
-    "Actions": {
-      "BeforeSendingNonce": `optional, string: a URL that will be POSTed to before sending the nonce, see ##Actions`,
-      "BeforeSendingToken": `optional, string: a URL that will be GETed to before sending the token, see ##Actions`
+    "Callbacks": {
+      "BeforeSendingNonce": `optional, string: a URL that will be POSTed to before sending the nonce, see ##Callbacks`,
+      "BeforeSendingToken": `optional, string: a URL that will be GETed to before sending the token, see ##Callbacks`
     }
   }
 ```
@@ -118,8 +118,8 @@ To change the url/port at which the server runs (default of http://localhost:500
 ## Rate limiting
 PwdLess uses the [AspNetCoreRateLimit](https://www.nuget.org/packages/AspNetCoreRateLimit/) package for IP-based rate limiting. Rate limiting is important to prevent users from spamming emails. Rate limiting is also configurable from `appsettings.json`: refer to the [official AspNetCoreRateLimit documentation](https://github.com/stefanprodan/AspNetCoreRateLimit/wiki/IpRateLimitMiddleware#setup) on how to do that. 
 
-## Actions
-PwdLess provides an optional (leave empty to opt-out) "Actions" feature. These are essentially URLs that will be queried at different stages before continuing with the authentication process. Currently there are two actions (see configuration):
+## Callbacks
+PwdLess provides an optional (leave empty to opt-out) "Callbacks" feature. These are essentially URLs that will be queried at different stages before continuing with the authentication process. Currently there are two Callbacks (see configuration):
 
 * `BeforeSendingNonce`: a URL that will be POSTed to before sending the nonce to the user's identifier (email). The request will include a JSON object containing the user's identifier. If an unsuccessful reponse is received, the nonce will not be sent to the user and an error will be shown instead. This is useful if you want to limit the identifiers that could be used with your app.
 
