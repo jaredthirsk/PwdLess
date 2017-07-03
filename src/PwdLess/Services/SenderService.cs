@@ -14,46 +14,89 @@ namespace PwdLess.Services
     /// </summary>
     public interface ISenderService
     {
-        Task SendAsync(string address, string body);
+        Task SendAsync(string contact, string nonce, string template);
     }
 
-    public class ConsoleEmailTestingService : ISenderService
+    enum ContactType
+    {
+        Email,
+        PhoneNumber
+    }
+
+    public class ConsoleTestingSenderService : ISenderService
     {
         private IConfigurationRoot _config;
-        public ConsoleEmailTestingService(IConfigurationRoot config)
+        private ITemplateProcessor _templateProcessor;
+
+        public ConsoleTestingSenderService(IConfigurationRoot config,
+            ITemplateProcessor templateProcessor)
         {
             _config = config;
+            _templateProcessor = templateProcessor;
         }
-            
-        public Task SendAsync(string address, string body)
+
+        public Task SendAsync(string contact, string nonce, string template)
         {
-            Console.WriteLine($@"To: {address}, 
+            switch (AssertTypeOf(contact))
+            {
+                case ContactType.Email:
+                    break;
+                case ContactType.PhoneNumber:
+                    break;
+                default:
+                    Console.WriteLine($@"To: {contact}, 
                                  From: {new MailboxAddress(_config["PwdLess:EmailAuth:From"])}, 
-                                 Subject: {_config["PwdLess:EmailContents:Subject"]}, 
-                                 Body: {body}");
+                                 Subject: {_config[$"PwdLess:EmailContents:{template}:Subject"]}, 
+                                 Body: {_templateProcessor.ProcessTemplate(nonce, template, $"{{\"contact\":{contact}}}")}");
+                    break;
+            }
+            
             return null;
+        }
+
+        private ContactType AssertTypeOf(string contact)
+        {
+            //TODO implement this!
+            return ContactType.Email;
         }
     }
 
-    public class EmailService : ISenderService
+    public class SenderService : ISenderService
     {
-        private IConfigurationRoot _config;       
-        public EmailService(IConfigurationRoot config)
+        private IConfigurationRoot _config;
+        private ITemplateProcessor _templateProcessor;
+
+        public SenderService(IConfigurationRoot config,
+            ITemplateProcessor templateProcessor)
         {
             _config = config;
+            _templateProcessor = templateProcessor;
         }
-    
 
-        public async Task SendAsync(string address, string body)
+        public async Task SendAsync(string contact, string nonce, string template)
+        {
+            switch (AssertTypeOf(contact))
+            {
+                case ContactType.Email:
+                    await SendEmailAsync(contact, nonce, template);
+                    break;
+                case ContactType.PhoneNumber:
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private async Task SendEmailAsync(string contact, string nonce, string template)
         {
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(_config["PwdLess:EmailAuth:From"]));
-            message.To.Add(new MailboxAddress(address));
-            message.Subject = _config["PwdLess:EmailContents:Subject"];
+            message.To.Add(new MailboxAddress(contact));
+            message.Subject = _config[$"PwdLess:EmailContents:{template}:Subject"];
 
-            message.Body = new TextPart(_config["PwdLess:EmailContents:BodyType"])
+            message.Body = new TextPart(_config[$"PwdLess:EmailContents:{template}:BodyType"])
             {
-                Text = body
+                Text = _templateProcessor.ProcessTemplate(nonce, template, $"{{\"contact\":{contact}}}")
             };
 
             using (var client = new SmtpClient())
@@ -72,6 +115,11 @@ namespace PwdLess.Services
                 client.Disconnect(true);
             }
         }
-        
+
+        private ContactType AssertTypeOf(string contact)
+        {
+            //TODO implement this!
+            return ContactType.Email;
+        }
     }
 }

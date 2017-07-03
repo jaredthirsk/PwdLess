@@ -12,6 +12,7 @@ using PwdLess.Services;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using AspNetCoreRateLimit;
+using PwdLess.Models;
 
 namespace PwdLess
 {
@@ -33,10 +34,14 @@ namespace PwdLess
         // This method gets called by the runtime. Use this method to add services to the container
         public void ConfigureServices(IServiceCollection services)
         {
+            // Database context
+            services.AddDbContext<AuthContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("LocalSqlSTest")));
+
             // PwdLess services
             services.AddDistributedMemoryCache(); // CAN REPLACE WITH AddDistrbutedRedisCache for Redis support
             services.AddSingleton(Configuration);
-            services.AddScoped<ISenderService, EmailService>(); // CAN REPLACE WITH ConsoleEmailTestingService
+            services.AddScoped<ISenderService, ConsoleTestingSenderService>(); // CAN REPLACE WITH SenderService
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ITemplateProcessor, EmailTemplateProcessor>();
             services.AddScoped<ICallbackService, CallbackService>();

@@ -12,7 +12,7 @@ namespace PwdLess.Services
     /// </summary>
     public interface ITemplateProcessor
     {
-        string ProcessTemplate(string nonce, string extraBodyData, string type = "default");
+        string ProcessTemplate(string nonce, string template, string extraBodyData);
     }
     
     public class EmailTemplateProcessor : ITemplateProcessor
@@ -23,10 +23,10 @@ namespace PwdLess.Services
             _config = config;
         }
 
-        public string ProcessTemplate(string nonce, string extraBodyData, string type)
+        public string ProcessTemplate(string nonce, string template, string extraBodyData)
         {
 
-            var body = _config[$"PwdLess:EmailContents:Body:{type}"]
+            var body = _config[$"PwdLess:EmailContents:{template}:Body"]
                 .Replace("{{nonce}}", nonce);
 
             foreach (var kvPair in JsonConvert.DeserializeObject<Dictionary<string, string>>(extraBodyData))

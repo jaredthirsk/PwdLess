@@ -155,8 +155,76 @@ This project is licensed under the permissive open source [MIT license](https://
 
 
 
+# Vnext plan
+Replace Email w/Identifier
+
+```
+/---------\
+| Enter   |
+| Email:  |
+| >______ |
+\---------/
 
 
+Users table:
+| UserId (PK) | EXTRA_INFO .|.|.|
+
+UserEmails table:
+| Email (PK) | UserId (FK) |
+
+Nonce table:
+| Nonce (CK) | Email (CK) | IsRegistering (BOOL) |
+
+RefreshToken table:
+| UserId (CK) | RefreshToken (CK) | Expires |
 
 
+HeyNewbie email:
+"Hey Newbie! http://CLIENT/REGISTER?nonce=[NONCE]"
 
+
+WelcomeBack email:
+"Welcome Back! http://CLIENT/LOGIN?nonce[NONCE]"
+
+```
+
+## User enters email in client
+1. Client sends user's email to PwdLess
+  `GET /SendNonce ?identifier=[USER'S EMAIL]`
+2. PwdLess looks at UserEmails table to see if email exists
+  1. Nonce's email does not exist
+    1. PwdLess generates nonce-email in Nonce table with IsRegistering=True
+    2. PwdLess sends HeyNewbie email with nonce to user's email
+    3. User enters nonce (auto via query strings) + extra info into client
+    4. Client sends nonce + extra info to PwdLess
+      Because IsRegistering is true (of nonce's email in Nonce table), it is expecting user-info in this request
+      `GET /NonceToToken ?nonce=[USER'S NONCE] &extra-info=[USER EXTRA INFO]` <- configurable
+    5. PwdLess creates user in Users table with generated (or supplied) UserId & user info, sets IsRegistering to false, & links nonce's email to UserId in UserEmails table 
+  2. Nonce's email exists
+    1. PwdLess generates nonce-email in Nonce table with IsRegistering=False
+    2. PwdLess sends WelcomeBack email with nonce to user's email
+    3. User enters nonce into client (auto via query strings)
+    4. Client sends nonce to PwdLess
+      Because IsRegistering (of nonce's email in Nonce table) is false, no extra-info expected
+      `GET /NonceToToken ?nonce=[USER'S NONCE]`
+3. PwdLess creates a long-lived refresh token for UserId in RefreshToken table
+4. PwdLess responds with the refresh token 
+4. Client can give refresh token to get a short-lived JWT (containing user info, userId, and list of user email(s) to client)
+
+# User wants to log out all devices
+* `GET /deAuth` while auth'd (to know UserId)
+* PwdLess deletes UserId's entry in RefreshToken table (disallowing the other clients from requesting a new JWT)
+* maybe even send some signal to tell clients to delete their existing JWTs
+
+# User wants to add/remove email to account
+* `GET /addEmail or GET /removeEmail ?email=[EMAIL TO ADD/REMOVE]` while auth'd (to know UserId)
+* simply add/remove that email to user in UserEmails table
+* don't remove if only 1 email left - or yes if "account deleting" allowed
+
+# User wants to edit user-info
+* `GET /editUserData ?new-data=[MODIFIED DATA]` while auth'd (to know UserId)
+* responds with JWT that has the updated data to keep client JWT up-to-date
+* pretty much send the new user data while auth'd 
+
+# User wants to edit UserId
+Fuck no.

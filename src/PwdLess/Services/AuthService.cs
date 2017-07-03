@@ -1,6 +1,7 @@
 ﻿using Jose;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
+using PwdLess.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,31 +17,34 @@ namespace PwdLess.Services
     /// </summary>
     public interface IAuthService
     {
-        Task<string> CreateAndStoreNonce(string identifier, string type = "default");
-        Task<string> GetTokenFromNonce(string nonce);
+        bool DoesContactExist(string contact);
+        Task<string> AddNonce(string contact, bool isRegistering);
+        //Task<string> GetTokenFromNonce(string nonce);
     }
 
     public class AuthService : IAuthService
     {
         private IConfigurationRoot _config;
         private IDistributedCache _cache;
+        private AuthContext _context;
 
-        public AuthService(IDistributedCache cache, IConfigurationRoot config)
+        public AuthService(IDistributedCache cache, IConfigurationRoot config, AuthContext context)
         {
             _config = config;
             _cache = cache;
+            _context = context;
         }
-        
-        public async Task<string> CreateAndStoreNonce(string identifier, string type)
+
+        public bool DoesContactExist(string contact)
         {
-            var token = CreateJwt(identifier, new Dictionary<string, object>
-            {
-                { "type", type }
-            });
-            var nonce = GenerateNonce();
+            return _context.UserContacts.Any(uc => uc.Contact == contact);
+        }
 
-            await AddToCache(token, nonce);
-
+        public async Task<string> AddNonce(string contact, bool isRegistering)
+        {
+            string nonce = GenerateNonce();
+            _context.Nonces.Add(new Nonce { Contact = contact, IsRegistering = isRegistering, Content = nonce });
+            await _context.SaveChangesAsync();
             return nonce;
         }
 
@@ -119,6 +123,5 @@ namespace PwdLess.Services
                 .Subtract(new DateTime(1970, 1, 1)))
                 .TotalSeconds;
         }
-
     }
 }
