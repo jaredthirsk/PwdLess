@@ -19,7 +19,14 @@ namespace PwdLess.Services
     {
         bool DoesContactExist(string contact);
         Task<string> AddNonce(string contact, bool isRegistering);
-        //Task<string> GetTokenFromNonce(string nonce);
+        string ContactOfNonce(string nonce);
+        bool IsNonceIsRegistering(string nonce);
+        Task AddUser(User user);
+        Task AddUserContact(string userId, string contact);
+        string UserIdOfContact(string contact);
+        Task<string> AddRefreshToken(string userId);
+        Task DeleteNonce(string nonce);
+        void EnsureNonceNotExpired(string nonce);
     }
 
     public class AuthService : IAuthService
@@ -55,21 +62,64 @@ namespace PwdLess.Services
             return nonce;
         }
 
-        public async Task<string> GetTokenFromNonce(string nonce)
+        public void EnsureNonceNotExpired(string nonce)
         {
-            byte[] token = await _cache.GetAsync(nonce);
+            long expiry = _context.Nonces.FirstOrDefault(n => n.Content == nonce).Expiry;
 
-            if (token != null)
-            {
-                await _cache.RemoveAsync(nonce);
-
-                return Encoding.UTF8.GetString(token);
-            }
-            else
-            {
-                throw new IndexOutOfRangeException("Nonce doesn't exist.");
-            }
+            if (expiry > ToUnixTime(DateTime.Now))
+                throw new NonceExpiredException(new DateTime(expiry).ToString()); // TODO make better
         }
+
+        public string ContactOfNonce(string nonce)
+        {
+            Nonce nonceObj = _context.Nonces.FirstOrDefault(n => n.Content == nonce);
+            if (nonceObj == null)
+                throw new IndexOutOfRangeException();
+            return nonceObj.Contact;
+        }
+
+        public bool IsNonceIsRegistering(string nonce)
+        {
+            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).IsRegistering;
+        }
+
+        public async Task AddUser(User user)
+        {
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddUserContact(string userId, string contact)
+        {
+            _context.UserContacts.Add(new UserContact()
+            {
+                Contact = contact,
+                UserId = userId
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        public string UserIdOfContact(string contact)
+        {
+            return _context.UserContacts.FirstOrDefault(uc => uc.Contact == contact).UserId;
+        }
+
+        public async Task<string> AddRefreshToken(string userId)
+        {
+            var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
+            user.RefreshToken = GenerateRefreshToken();
+            user.RefreshTokenExpiry = ToUnixTime(DateTime.Now + new TimeSpan(Int32.Parse(_config["PwdLess:RefreshToken:Expiry"]), 0, 0, 0));
+            user.RefreshTokenRevoked = false;
+            await _context.SaveChangesAsync();
+            return user.RefreshToken;
+        }
+
+        public async Task DeleteNonce(string nonce)
+        {
+            _context.Nonces.Remove(new Nonce() { Content = nonce });
+            await _context.SaveChangesAsync();
+        }
+
 
         private string GenerateNonce()
         {
@@ -87,6 +137,11 @@ namespace PwdLess.Services
                 .Substring(0, maxLength);
             
             return cRString;
+        }
+
+        private string GenerateRefreshToken()
+        {
+            return GenerateNonce(); // TODO: atually implement
         }
         
         private string CreateJwt(string sub, Dictionary<string, object> claims = null)
@@ -130,5 +185,15 @@ namespace PwdLess.Services
                 .Subtract(new DateTime(1970, 1, 1)))
                 .TotalSeconds;
         }
+
+    }
+
+
+    [Serializable]
+    public class NonceExpiredException : Exception
+    {
+        public NonceExpiredException() { }
+        public NonceExpiredException(string message) : base(message) { }
+        public NonceExpiredException(string message, Exception inner) : base(message, inner) { }
     }
 }

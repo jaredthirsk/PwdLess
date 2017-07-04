@@ -61,11 +61,11 @@ namespace PwdLess.Controllers
                 _logger.LogDebug($"A nonce was sent to {contact}.");
                 return Ok($"Success! Sent nonce to {contact}.");
             }
-            catch (InvalidIdentifierException e)
-            {
-                _logger.LogError(e.ToString());
-                return BadRequest("Identifier invalid.");
-            }  
+            //catch (InvalidIdentifierException e)
+            //{
+            //    _logger.LogError(e.ToString());
+            //    return BadRequest("Identifier invalid.");
+            //}  
             catch (Exception e)
             {
                 _logger.LogError(e.ToString());
@@ -73,32 +73,61 @@ namespace PwdLess.Controllers
             }
             
         }
+
+        public async Task<IActionResult> NonceToRefreshToken(string nonce, User user = null)
+        {
+            try
+            {
+                _authService.EnsureNonceNotExpired(nonce);
+
+                var contact = _authService.ContactOfNonce(nonce);
+
+                if (_authService.IsNonceIsRegistering(nonce))
+                {
+                    if (!ModelState.IsValid)
+                        return BadRequest("You need to supply all additional user infomation.");
+
+                    user.UserId = user.UserId ?? (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12)));
+
+                    await _authService.AddUser(user); // TODO: batch all db CUD calls together
+                    await _authService.AddUserContact(user.UserId, contact);
+                }
+
+                
+                var userId = _authService.UserIdOfContact(contact);
+                var refreshToken = await _authService.AddRefreshToken(userId);
+
+                await _authService.DeleteNonce(nonce);
+
+                
+                //// get a Nonce's associated token
+                //var token = await _authService.GetTokenFromNonce(nonce);
+                //
+                //// run the BeforeSendingToken callback, discard result
+                //await _callbackService.BeforeSendingToken(token);
         
-        //public async Task<IActionResult> NonceToToken(string nonce)
-        //{
-        //    try
-        //    {
-        //        // get a Nonce's associated token
-        //        var token = await _authService.GetTokenFromNonce(nonce);
-        //
-        //        // run the BeforeSendingToken callback, discard result
-        //        await _callbackService.BeforeSendingToken(token);
-        //
-        //        _logger.LogDebug($"Nonce: {nonce}, token sent: {token}");
-        //        return Ok(token);
-        //    }
-        //    catch (IndexOutOfRangeException)
-        //    {
-        //        _logger.LogDebug($"A requested nonce's token was not found. Nonce: {nonce}.");
-        //        return NotFound("Nonce not found.");
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        _logger.LogError(e.ToString());
-        //        return BadRequest("Something went wrong.");
-        //    }
-        //
-        //}
+                _logger.LogDebug($"Refresh token sent: {refreshToken}");
+                return Ok(refreshToken);
+            }
+            catch (NonceExpiredException e)
+            {
+                _logger.LogDebug($"A requested nonce was expired. Nonce: {nonce}. Exception: {e}");
+                return NotFound("Nonce expired.");
+            }
+            catch (IndexOutOfRangeException e)
+            {
+                _logger.LogDebug($"A requested nonce's contact was not found. Nonce: {nonce}. Exception: {e}");
+                return NotFound("Nonce not found.");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.ToString());
+                return BadRequest("Something went wrong.");
+            }
+        
+        }
+
+
 
         [Authorize]
         /// Validates tokens sent via authorization header
