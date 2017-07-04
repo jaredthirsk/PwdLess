@@ -20,7 +20,7 @@ namespace PwdLess.Services
         bool DoesContactExist(string contact);
         Task<string> AddNonce(string contact, bool isRegistering);
 
-        void EnsureNonceNotExpired(string nonce);
+        void ValidateNonce(string nonce);
         string ContactOfNonce(string nonce);
         bool IsNonceIsRegistering(string nonce);
         Task AddUser(User user);
@@ -29,8 +29,10 @@ namespace PwdLess.Services
         Task<string> AddRefreshToken(string userId);
         Task DeleteNonce(string nonce);
 
-        void EnsureRefreshTokenNotExpiredOrRevoked(string refreshToken);
+        void ValidateRefreshToken(string refreshToken);
         string RefreshTokenToJwt(string refreshToken);
+
+        Task RevokeRefreshToken(string userId);
     }
 
     public class AuthService : IAuthService
@@ -66,20 +68,20 @@ namespace PwdLess.Services
             return nonce;
         }
 
-        public void EnsureNonceNotExpired(string nonce)
+        public void ValidateNonce(string nonce)
         {
-            long expiry = _context.Nonces.FirstOrDefault(n => n.Content == nonce).Expiry;
+            Nonce nonceObj = _context.Nonces.FirstOrDefault(n => n.Content == nonce);
 
-            if (expiry > ToUnixTime(DateTime.Now))
-                throw new ExpiredException(new DateTime(expiry).ToString()); // TODO make better
+            if (nonceObj == null)
+                throw new IndexOutOfRangeException();
+
+            if (nonceObj.Expiry > ToUnixTime(DateTime.Now))
+                throw new ExpiredException(new DateTime(nonceObj.Expiry).ToString()); // TODO make better
         }
 
         public string ContactOfNonce(string nonce)
         {
-            Nonce nonceObj = _context.Nonces.FirstOrDefault(n => n.Content == nonce);
-            if (nonceObj == null)
-                throw new IndexOutOfRangeException();
-            return nonceObj.Contact;
+            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).Contact;
         }
 
         public bool IsNonceIsRegistering(string nonce)
@@ -113,7 +115,6 @@ namespace PwdLess.Services
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
             user.RefreshToken = GenerateRefreshToken();
             user.RefreshTokenExpiry = ToUnixTime(DateTime.Now + new TimeSpan(Int32.Parse(_config["PwdLess:RefreshToken:Expiry"]), 0, 0, 0));
-            user.RefreshTokenRevoked = false;
             await _context.SaveChangesAsync();
             return user.RefreshToken;
         }
@@ -124,21 +125,28 @@ namespace PwdLess.Services
             await _context.SaveChangesAsync();
         }
 
-        public void EnsureRefreshTokenNotExpiredOrRevoked(string refreshToken)
+        public void ValidateRefreshToken(string refreshToken)
         {
             User userObj = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
 
+            if (userObj.RefreshToken == "")
+                throw new IndexOutOfRangeException();
+
             if (userObj.RefreshTokenExpiry > ToUnixTime(DateTime.Now))
                 throw new ExpiredException(new DateTime(userObj.RefreshTokenExpiry).ToString()); // TODO make better
-
-            if (userObj.RefreshTokenRevoked)
-                throw new RevokedException();
+            
         }
 
         public string RefreshTokenToJwt(string refreshToken)
         {
             var userId = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken).UserId;
             return CreateJwt(userId);
+        }
+
+        public async Task RevokeRefreshToken(string userId)
+        {
+            _context.Users.FirstOrDefault(u => u.UserId == userId).RefreshToken = "";
+            await _context.SaveChangesAsync();
         }
 
         private string GenerateNonce()
@@ -206,7 +214,6 @@ namespace PwdLess.Services
                 .TotalSeconds;
         }
 
-
     }
 
 
@@ -216,13 +223,5 @@ namespace PwdLess.Services
         public ExpiredException() { }
         public ExpiredException(string message) : base(message) { }
         public ExpiredException(string message, Exception inner) : base(message, inner) { }
-    }
-
-    [Serializable]
-    public class RevokedException : Exception
-    {
-        public RevokedException() { }
-        public RevokedException(string message) : base(message) { }
-        public RevokedException(string message, Exception inner) : base(message, inner) { }
     }
 }

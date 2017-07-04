@@ -11,8 +11,6 @@ namespace PwdLess.Models
         public string RefreshToken { get; set; }
         [BindNever]
         public long RefreshTokenExpiry { get; set; }
-        [BindNever]
-        public bool RefreshTokenRevoked { get; set; }
 
         [BindNever]
         public ICollection<UserContact> UserContacts { get; set; }

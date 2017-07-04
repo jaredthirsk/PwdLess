@@ -78,7 +78,7 @@ namespace PwdLess.Controllers
         {
             try
             {
-                _authService.EnsureNonceNotExpired(nonce);
+                _authService.ValidateNonce(nonce);
 
                 var contact = _authService.ContactOfNonce(nonce);
 
@@ -132,15 +132,15 @@ namespace PwdLess.Controllers
         {
             try
             {
-                _authService.EnsureRefreshTokenNotExpiredOrRevoked(refreshToken);
+                _authService.ValidateRefreshToken(refreshToken);
                 string accessToken = _authService.RefreshTokenToJwt(refreshToken);
 
                 _logger.LogDebug($"Access token sent: {accessToken}");
                 return Ok(accessToken);
             }
-            catch (Exception e) when (e is ExpiredException || e is RevokedException )
+            catch (ExpiredException e)
             {
-                _logger.LogDebug($"A refrenced refresh token was expired or revoked. Refresh token: {refreshToken}. Exception: {e}");
+                _logger.LogDebug($"A refrenced refresh token was expired. Refresh token: {refreshToken}. Exception: {e}");
                 return NotFound("Refresh token not found.");
             }
             catch (IndexOutOfRangeException e)
@@ -155,6 +155,25 @@ namespace PwdLess.Controllers
             }
         }
 
+        [Authorize]
+        public async Task<IActionResult> RevokeRefreshToken()
+        {
+            try
+            {
+                string userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value.ToString();
+
+                await _authService.RevokeRefreshToken(userId);
+
+
+                _logger.LogDebug($"Refresh token for user was revoked: {userId}.");
+                return Ok($"Success! Refresh token revoked.");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.ToString());
+                return BadRequest("Something went wrong.");
+            }
+        }
 
         [Authorize]
         /// Validates tokens sent via authorization header
