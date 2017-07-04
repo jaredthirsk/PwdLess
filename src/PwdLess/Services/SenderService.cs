@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 
 namespace PwdLess.Services
@@ -27,15 +28,18 @@ namespace PwdLess.Services
     {
         private IConfigurationRoot _config;
         private ITemplateProcessor _templateProcessor;
+        private ILogger _logger;
 
         public ConsoleTestingSenderService(IConfigurationRoot config,
-            ITemplateProcessor templateProcessor)
+            ITemplateProcessor templateProcessor,
+            ILogger<ConsoleTestingSenderService> logger)
         {
             _config = config;
             _templateProcessor = templateProcessor;
+            _logger = logger;
         }
 
-        public Task SendAsync(string contact, string nonce, string template)
+        public async Task SendAsync(string contact, string nonce, string template)
         {
             switch (AssertTypeOf(contact))
             {
@@ -44,14 +48,15 @@ namespace PwdLess.Services
                 case ContactType.PhoneNumber:
                     break;
                 default:
-                    Console.WriteLine($@"To: {contact}, 
-                                 From: {new MailboxAddress(_config["PwdLess:EmailAuth:From"])}, 
-                                 Subject: {_config[$"PwdLess:EmailContents:{template}:Subject"]}, 
-                                 Body: {_templateProcessor.ProcessTemplate(nonce, template, $"{{\"contact\":{contact}}}")}");
                     break;
             }
             
-            return null;
+            _logger.LogDebug($@"To: {contact}, 
+                                 From: {new MailboxAddress(_config["PwdLess:EmailAuth:From"])}, 
+                                 Subject: {_config[$"PwdLess:EmailContents:{template}:Subject"]}, 
+                                 Body: {_templateProcessor.ProcessTemplate(nonce, template, $"{{\"contact\":\"{contact}\"}}")}");
+
+            //return Task;
         }
 
         private ContactType AssertTypeOf(string contact)

@@ -43,7 +43,14 @@ namespace PwdLess.Services
         public async Task<string> AddNonce(string contact, bool isRegistering)
         {
             string nonce = GenerateNonce();
-            _context.Nonces.Add(new Nonce { Contact = contact, IsRegistering = isRegistering, Content = nonce });
+            _context.Nonces.Add(new Nonce
+            {
+                Contact = contact,
+                IsRegistering = isRegistering,
+                Content = nonce,
+                Expiry = ToUnixTime(DateTime.Now + new TimeSpan(0, Int32.Parse(_config["PwdLess:Nonce:Expiry"]), 0))
+            });
+
             await _context.SaveChangesAsync();
             return nonce;
         }

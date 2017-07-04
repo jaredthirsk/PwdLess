@@ -36,7 +36,7 @@ namespace PwdLess
         {
             // Database context
             services.AddDbContext<AuthContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("LocalSqlSTest")));
+                options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB; Database=PwdLess; Trusted_Connection=True; MultipleActiveResultSets=true"));
 
             // PwdLess services
             services.AddDistributedMemoryCache(); // CAN REPLACE WITH AddDistrbutedRedisCache for Redis support

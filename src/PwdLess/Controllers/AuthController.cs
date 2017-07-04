@@ -50,14 +50,14 @@ namespace PwdLess.Controllers
 
                 // create a nonce/token pair, store them, get Nonce
                 //var nonce = await _authService.CreateAndStoreNonce(email, type);
-                
+
                 // run the BeforeSendingNonce callback, put result in message body
                 //var extraBodyData = await _callbackService.BeforeSendingNonce(email, type) ?? "{}";
-                
+
                 // create body for message to be sent to user & send it
                 //var body = _templateProcessor.ProcessTemplate(nonce, extraBodyData, type);
                 //await _senderService.SendAsync(email, body);
-                
+
                 _logger.LogDebug($"A nonce was sent to {contact}.");
                 return Ok($"Success! Sent nonce to {contact}.");
             }
