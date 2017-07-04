@@ -109,7 +109,7 @@ namespace PwdLess.Controllers
                 _logger.LogDebug($"Refresh token sent: {refreshToken}");
                 return Ok(refreshToken);
             }
-            catch (NonceExpiredException e)
+            catch (ExpiredException e)
             {
                 _logger.LogDebug($"A requested nonce was expired. Nonce: {nonce}. Exception: {e}");
                 return NotFound("Nonce expired.");
@@ -127,6 +127,33 @@ namespace PwdLess.Controllers
         
         }
 
+
+        public IActionResult RefreshTokenToAccessToken(string refreshToken)
+        {
+            try
+            {
+                _authService.EnsureRefreshTokenNotExpiredOrRevoked(refreshToken);
+                string accessToken = _authService.RefreshTokenToJwt(refreshToken);
+
+                _logger.LogDebug($"Access token sent: {accessToken}");
+                return Ok(accessToken);
+            }
+            catch (Exception e) when (e is ExpiredException || e is RevokedException )
+            {
+                _logger.LogDebug($"A refrenced refresh token was expired or revoked. Refresh token: {refreshToken}. Exception: {e}");
+                return NotFound("Refresh token not found.");
+            }
+            catch (IndexOutOfRangeException e)
+            {
+                _logger.LogDebug($"A refrenced refresh token was not found. Refresh token: {refreshToken}. Exception: {e}");
+                return NotFound("Refresh token not found.");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.ToString());
+                return BadRequest("Something went wrong.");
+            }
+        }
 
 
         [Authorize]

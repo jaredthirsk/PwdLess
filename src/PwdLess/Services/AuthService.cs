@@ -19,6 +19,8 @@ namespace PwdLess.Services
     {
         bool DoesContactExist(string contact);
         Task<string> AddNonce(string contact, bool isRegistering);
+
+        void EnsureNonceNotExpired(string nonce);
         string ContactOfNonce(string nonce);
         bool IsNonceIsRegistering(string nonce);
         Task AddUser(User user);
@@ -26,7 +28,9 @@ namespace PwdLess.Services
         string UserIdOfContact(string contact);
         Task<string> AddRefreshToken(string userId);
         Task DeleteNonce(string nonce);
-        void EnsureNonceNotExpired(string nonce);
+
+        void EnsureRefreshTokenNotExpiredOrRevoked(string refreshToken);
+        string RefreshTokenToJwt(string refreshToken);
     }
 
     public class AuthService : IAuthService
@@ -67,7 +71,7 @@ namespace PwdLess.Services
             long expiry = _context.Nonces.FirstOrDefault(n => n.Content == nonce).Expiry;
 
             if (expiry > ToUnixTime(DateTime.Now))
-                throw new NonceExpiredException(new DateTime(expiry).ToString()); // TODO make better
+                throw new ExpiredException(new DateTime(expiry).ToString()); // TODO make better
         }
 
         public string ContactOfNonce(string nonce)
@@ -120,6 +124,22 @@ namespace PwdLess.Services
             await _context.SaveChangesAsync();
         }
 
+        public void EnsureRefreshTokenNotExpiredOrRevoked(string refreshToken)
+        {
+            User userObj = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
+
+            if (userObj.RefreshTokenExpiry > ToUnixTime(DateTime.Now))
+                throw new ExpiredException(new DateTime(userObj.RefreshTokenExpiry).ToString()); // TODO make better
+
+            if (userObj.RefreshTokenRevoked)
+                throw new RevokedException();
+        }
+
+        public string RefreshTokenToJwt(string refreshToken)
+        {
+            var userId = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken).UserId;
+            return CreateJwt(userId);
+        }
 
         private string GenerateNonce()
         {
@@ -186,14 +206,23 @@ namespace PwdLess.Services
                 .TotalSeconds;
         }
 
+
     }
 
 
     [Serializable]
-    public class NonceExpiredException : Exception
+    public class ExpiredException : Exception
     {
-        public NonceExpiredException() { }
-        public NonceExpiredException(string message) : base(message) { }
-        public NonceExpiredException(string message, Exception inner) : base(message, inner) { }
+        public ExpiredException() { }
+        public ExpiredException(string message) : base(message) { }
+        public ExpiredException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    [Serializable]
+    public class RevokedException : Exception
+    {
+        public RevokedException() { }
+        public RevokedException(string message) : base(message) { }
+        public RevokedException(string message, Exception inner) : base(message, inner) { }
     }
 }
