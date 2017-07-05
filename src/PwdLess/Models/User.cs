@@ -5,6 +5,7 @@ namespace PwdLess.Models
 {
     public class User // Only model used for model binding
     {
+        [BindNever]
         public string UserId { get; set; }
 
         [BindNever]

@@ -1,6 +1,7 @@
 ﻿using Jose;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using PwdLess.Models;
 using System;
 using System.Collections.Generic;
@@ -27,10 +28,10 @@ namespace PwdLess.Services
         Task AddUserContact(string userId, string contact);
         string UserIdOfContact(string contact);
         Task<string> AddRefreshToken(string userId);
-        Task DeleteNonce(string nonce);
+        Task DeleteNonce(string contact);
 
         void ValidateRefreshToken(string refreshToken);
-        string RefreshTokenToJwt(string refreshToken);
+        string RefreshTokenToAccessToken(string refreshToken);
 
         Task RevokeRefreshToken(string userId);
     }
@@ -55,13 +56,14 @@ namespace PwdLess.Services
 
         public async Task<string> AddNonce(string contact, bool isRegistering)
         {
+            await DeleteNonce(contact);
             string nonce = GenerateNonce();
             _context.Nonces.Add(new Nonce
             {
                 Contact = contact,
                 IsRegistering = isRegistering,
                 Content = nonce,
-                Expiry = ToUnixTime(DateTime.Now + new TimeSpan(0, Int32.Parse(_config["PwdLess:Nonce:Expiry"]), 0))
+                Expiry = ToUnixTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:Nonce:Expiry"])))
             });
 
             await _context.SaveChangesAsync();
@@ -70,13 +72,14 @@ namespace PwdLess.Services
 
         public void ValidateNonce(string nonce)
         {
-            Nonce nonceObj = _context.Nonces.FirstOrDefault(n => n.Content == nonce);
+            Nonce nonceObj = _context.Nonces.OrderBy(n => n.Expiry)
+                                            .FirstOrDefault(n => n.Content == nonce);
 
             if (nonceObj == null)
                 throw new IndexOutOfRangeException();
 
-            if (nonceObj.Expiry > ToUnixTime(DateTime.Now))
-                throw new ExpiredException(new DateTime(nonceObj.Expiry).ToString()); // TODO make better
+            if (nonceObj.Expiry < ToUnixTime(DateTime.Now))
+                throw new ExpiredException(nonceObj.Expiry.ToString() + "     " + ToUnixTime(DateTime.Now).ToString()); // TODO make better
         }
 
         public string ContactOfNonce(string nonce)
@@ -114,14 +117,14 @@ namespace PwdLess.Services
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
             user.RefreshToken = GenerateRefreshToken();
-            user.RefreshTokenExpiry = ToUnixTime(DateTime.Now + new TimeSpan(Int32.Parse(_config["PwdLess:RefreshToken:Expiry"]), 0, 0, 0));
+            user.RefreshTokenExpiry = ToUnixTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:RefreshToken:Expiry"])));
             await _context.SaveChangesAsync();
             return user.RefreshToken;
         }
 
-        public async Task DeleteNonce(string nonce)
+        public async Task DeleteNonce(string contact)
         {
-            _context.Nonces.Remove(new Nonce() { Content = nonce });
+            _context.Nonces.RemoveRange(_context.Nonces.Where(n => n.Contact == contact));
             await _context.SaveChangesAsync();
         }
 
@@ -132,15 +135,15 @@ namespace PwdLess.Services
             if (userObj.RefreshToken == "")
                 throw new IndexOutOfRangeException();
 
-            if (userObj.RefreshTokenExpiry > ToUnixTime(DateTime.Now))
+            if (userObj.RefreshTokenExpiry < ToUnixTime(DateTime.Now))
                 throw new ExpiredException(new DateTime(userObj.RefreshTokenExpiry).ToString()); // TODO make better
             
         }
 
-        public string RefreshTokenToJwt(string refreshToken)
+        public string RefreshTokenToAccessToken(string refreshToken)
         {
-            var userId = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken).UserId;
-            return CreateJwt(userId);
+            var user = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
+            return GenerateAccessToken(user);
         }
 
         public async Task RevokeRefreshToken(string userId)
@@ -172,15 +175,18 @@ namespace PwdLess.Services
             return GenerateNonce(); // TODO: atually implement
         }
         
-        private string CreateJwt(string sub, Dictionary<string, object> claims = null)
+        private string GenerateAccessToken(User user, Dictionary<string, object> claims = null)
         {
             var payload = new Dictionary<string, object>
             {
-                { "sub", sub },
-                { "iss", _config["PwdLess:Jwt:Issuer"]},
+                { "sub", user.UserId },
+                { "iss", _config["PwdLess:AccessToken:Issuer"]},
                 { "iat", ToUnixTime(DateTime.Now) },
-                { "exp", _config["PwdLess:Jwt:Expiry"] == "" ? ToUnixTime(DateTime.Now.AddDays(30)) : Int32.Parse(_config["PwdLess:Jwt:Expiry"]) },
-                { "aud", _config["PwdLess:Jwt:Audience"] }
+                { "exp", ToUnixTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:AccessToken:Expiry"]))) },
+                { "aud", _config["PwdLess:AccessToken:Audience"] },
+                { "userInfo", JsonConvert.SerializeObject(new {
+                }) },
+                { "userContacts",  _context.UserContacts.Where(uc => uc.UserId == user.UserId).Select(uc => uc.Contact) }
             };
 
             if (claims != null)
@@ -190,22 +196,12 @@ namespace PwdLess.Services
             }
 
             string token = JWT.Encode(payload,
-                Encoding.UTF8.GetBytes(_config["PwdLess:Jwt:SecretKey"]),
+                Encoding.UTF8.GetBytes(_config["PwdLess:AccessToken:SecretKey"]),
                 JwsAlgorithm.HS256);
 
             return token;
         }
-        
-        private async Task AddToCache(string token, string nonce)
-        {
-            await _cache.SetAsync(nonce,
-                Encoding.UTF8.GetBytes(token),
-                new DistributedCacheEntryOptions()
-                {
-                    SlidingExpiration = new TimeSpan(0, Int32.Parse(_config["PwdLess:Nonce:Expiry"]), 0)
-                });
-        }
-        
+
         private long ToUnixTime(DateTime dateTime)
         {
             return (int)(dateTime

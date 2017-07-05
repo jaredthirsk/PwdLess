@@ -39,10 +39,9 @@ namespace PwdLess
                 options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB; Database=PwdLess; Trusted_Connection=True; MultipleActiveResultSets=true"));
 
             // PwdLess services
-            services.AddDistributedMemoryCache(); // CAN REPLACE WITH AddDistrbutedRedisCache for Redis support
             services.AddSingleton(Configuration);
-            services.AddScoped<ISenderService, ConsoleTestingSenderService>(); // CAN REPLACE WITH SenderService
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<ISenderService, ConsoleTestingSenderService>(); // CAN REPLACE WITH SenderService
             services.AddScoped<ITemplateProcessor, EmailTemplateProcessor>();
             services.AddScoped<ICallbackService, CallbackService>();
 
@@ -70,7 +69,7 @@ namespace PwdLess
             app.UseIpRateLimiting();
 
             #region Optional JWT Validation feature
-            var tokenSecretKey = Encoding.UTF8.GetBytes(Configuration["PwdLess:Jwt:SecretKey"]);
+            var tokenSecretKey = Encoding.UTF8.GetBytes(Configuration["PwdLess:AccessToken:SecretKey"]);
 
             var tokenValidationParameters = new TokenValidationParameters
             {
@@ -78,9 +77,9 @@ namespace PwdLess
                 RequireSignedTokens = true,
                 IssuerSigningKey = new SymmetricSecurityKey(tokenSecretKey),
                 ValidateIssuer = true,
-                ValidIssuer = Configuration["PwdLess:Jwt:Issuer"],
+                ValidIssuer = Configuration["PwdLess:AccessToken:Issuer"],
                 ValidateAudience = true,
-                ValidAudience = Configuration["PwdLess:Jwt:Audience"],
+                ValidAudience = Configuration["PwdLess:AccessToken:Audience"],
                 ValidateLifetime = true,
                 RequireExpirationTime = true,
                 ClockSkew = new TimeSpan(0, 5, 0),

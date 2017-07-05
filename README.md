@@ -167,16 +167,13 @@ Replace Email w/Identifier
 
 
 Users table:
-| UserId (PK) | EXTRA_INFO .|.|.|
+| UserId (PK) | RefreshToken| EXTRA_INFO .|.|.|
 
-UserEmails table:
-| Email (PK) | UserId (FK) |
+UserContacts table:
+| Contact (PK) | UserId (FK) |
 
 Nonce table:
-| Nonce (CK) | Email (CK) | IsRegistering (BOOL) |
-
-RefreshToken table:
-| UserId (CK) | RefreshToken (CK) | Expires |
+| Content (CK) | Contact (CK) | IsRegistering (BOOL) | Expiry |
 
 
 HeyNewbie email:
@@ -199,21 +196,23 @@ WelcomeBack email:
     4. Client sends nonce + extra info to PwdLess
       Because IsRegistering is true (of nonce's email in Nonce table), it is expecting user-info in this request
       `GET /NonceToToken ?nonce=[USER'S NONCE] &extra-info=[USER EXTRA INFO]` <- configurable
-    5. PwdLess creates user in Users table with generated (or supplied) UserId & user info, sets IsRegistering to false, & links nonce's email to UserId in UserEmails table 
+    5. PwdLess creates user in Users table with generated (or supplied) UserId & user info, links nonce's email to UserId in UserContacts table
   2. Nonce's email exists
     1. PwdLess generates nonce-email in Nonce table with IsRegistering=False
     2. PwdLess sends WelcomeBack email with nonce to user's email
     3. User enters nonce into client (auto via query strings)
     4. Client sends nonce to PwdLess
       Because IsRegistering (of nonce's email in Nonce table) is false, no extra-info expected
-      `GET /NonceToToken ?nonce=[USER'S NONCE]`
-3. PwdLess creates a long-lived refresh token for UserId in RefreshToken table
-4. PwdLess responds with the refresh token 
-4. Client can give refresh token to get a short-lived JWT (containing user info, userId, and list of user email(s) to client)
+      `GET /NonceToRefreshToken ?nonce=[USER'S NONCE] -> [REFRESH TOKEN]`
+3. Delete nonce record
+4. PwdLess creates a long-lived refresh token for UserId in Users table
+5. PwdLess responds with the refresh token 
+6. Client can give refresh token to get a short-lived JWT (containing user info, userId, and list of user email(s) to client)
+  `GET /RefreshTokenToAccessToken ?refreshToken=[REFRESH TOKEN] -> [ACCESS TOKEN]`
 
 # User wants to log out all devices
-* `GET /deAuth` while auth'd (to know UserId)
-* PwdLess deletes UserId's entry in RefreshToken table (disallowing the other clients from requesting a new JWT)
+* `GET /RevokeRefreshToken` while auth'd (to know UserId)
+* set refrehs token to ""
 * maybe even send some signal to tell clients to delete their existing JWTs
 
 # User wants to add/remove email to account

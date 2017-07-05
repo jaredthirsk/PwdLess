@@ -20,19 +20,16 @@ namespace PwdLess.Controllers
         private IAuthService _authService;
         private ISenderService _senderService;
         private ICallbackService _callbackService;
-        private IDistributedCache _cache;
         private ILogger _logger;
 
         public AuthController(IAuthService authService, 
             ISenderService senderService, 
             ICallbackService callbackService,
-            IDistributedCache cache,
             ILogger<AuthController> logger)
         {
             _authService = authService;
             _senderService = senderService;
             _callbackService = callbackService;
-            _cache = cache;
             _logger = logger;
         }
         
@@ -87,7 +84,7 @@ namespace PwdLess.Controllers
                     if (!ModelState.IsValid)
                         return BadRequest("You need to supply all additional user infomation.");
 
-                    user.UserId = user.UserId ?? (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12)));
+                    user.UserId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12))); /* ?? user.UserId */ // Users can't choose their own UserId, or TODO: they can but it can't be "admin"
 
                     await _authService.AddUser(user); // TODO: batch all db CUD calls together
                     await _authService.AddUserContact(user.UserId, contact);
@@ -97,7 +94,7 @@ namespace PwdLess.Controllers
                 var userId = _authService.UserIdOfContact(contact);
                 var refreshToken = await _authService.AddRefreshToken(userId);
 
-                await _authService.DeleteNonce(nonce);
+                await _authService.DeleteNonce(contact);
 
                 
                 //// get a Nonce's associated token
@@ -127,13 +124,12 @@ namespace PwdLess.Controllers
         
         }
 
-
         public IActionResult RefreshTokenToAccessToken(string refreshToken)
         {
             try
             {
                 _authService.ValidateRefreshToken(refreshToken);
-                string accessToken = _authService.RefreshTokenToJwt(refreshToken);
+                string accessToken = _authService.RefreshTokenToAccessToken(refreshToken);
 
                 _logger.LogDebug($"Access token sent: {accessToken}");
                 return Ok(accessToken);
@@ -160,7 +156,7 @@ namespace PwdLess.Controllers
         {
             try
             {
-                string userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value.ToString();
+                string userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
 
                 await _authService.RevokeRefreshToken(userId);
 
@@ -174,6 +170,8 @@ namespace PwdLess.Controllers
                 return BadRequest("Something went wrong.");
             }
         }
+
+
 
         [Authorize]
         /// Validates tokens sent via authorization header
