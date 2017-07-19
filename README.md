@@ -123,7 +123,7 @@ PwdLess provides an optional (leave empty to opt-out) "Callbacks" feature. These
 
 * `BeforeSendingNonce`: a URL that will be POSTed to before sending the nonce to the user's identifier (email). The request will include a JSON object containing the user's identifier. If an unsuccessful reponse is received, the nonce will not be sent to the user and an error will be shown instead. This is useful if you want to limit the identifiers that could be used with your app.
 
-* `BeforeSendingToken`: a URL that will be GETed to before sending the token to the user as a response. The request will include an authorization header (following the Bearer scheme) with the token. If an unsuccessful reponse is received, the token will not be sent to the user and an error will be shown instead. This is useful if you want to assign a user an Id if they don't exists in your database, etc.
+* `BeforeSendingToken`: a URL that will be POSTed to before sending the token to the user as a response. The request will include an authorization header (following the Bearer scheme) with the token (with an empty body). If an unsuccessful reponse is received, the token will not be sent to the user and an error will be shown instead. This is useful if you want to assign a user an Id if they don't exists in your database, etc.
 
 # Misc
 
@@ -155,75 +155,8 @@ This project is licensed under the permissive open source [MIT license](https://
 
 
 
-# Vnext plan
-Replace Email w/Identifier
-
-```
-/---------\
-| Enter   |
-| Email:  |
-| >______ |
-\---------/
 
 
-Users table:
-| UserId (PK) | RefreshToken| EXTRA_INFO .|.|.|
-
-UserContacts table:
-| Contact (PK) | UserId (FK) |
-
-Nonce table:
-| Content (CK) | Contact (CK) | IsRegistering (BOOL) | Expiry |
 
 
-HeyNewbie email:
-"Hey Newbie! http://CLIENT/REGISTER?nonce=[NONCE]"
 
-
-WelcomeBack email:
-"Welcome Back! http://CLIENT/LOGIN?nonce[NONCE]"
-
-```
-
-## User enters email in client
-1. Client sends user's email to PwdLess
-  `GET /SendNonce ?identifier=[USER'S EMAIL]`
-2. PwdLess looks at UserEmails table to see if email exists
-  1. Nonce's email does not exist
-    1. PwdLess generates nonce-email in Nonce table with IsRegistering=True
-    2. PwdLess sends HeyNewbie email with nonce to user's email
-    3. User enters nonce (auto via query strings) + extra info into client
-    4. Client sends nonce + extra info to PwdLess
-      Because IsRegistering is true (of nonce's email in Nonce table), it is expecting user-info in this request
-      `GET /NonceToToken ?nonce=[USER'S NONCE] &extra-info=[USER EXTRA INFO]` <- configurable
-    5. PwdLess creates user in Users table with generated (or supplied) UserId & user info, links nonce's email to UserId in UserContacts table
-  2. Nonce's email exists
-    1. PwdLess generates nonce-email in Nonce table with IsRegistering=False
-    2. PwdLess sends WelcomeBack email with nonce to user's email
-    3. User enters nonce into client (auto via query strings)
-    4. Client sends nonce to PwdLess
-      Because IsRegistering (of nonce's email in Nonce table) is false, no extra-info expected
-      `GET /NonceToRefreshToken ?nonce=[USER'S NONCE] -> [REFRESH TOKEN]`
-3. Delete nonce record
-4. PwdLess creates a long-lived refresh token for UserId in Users table
-5. PwdLess responds with the refresh token 
-6. Client can give refresh token to get a short-lived JWT (containing user info, userId, and list of user email(s) to client)
-  `GET /RefreshTokenToAccessToken ?refreshToken=[REFRESH TOKEN] -> [ACCESS TOKEN]`
-
-# User wants to log out all devices
-* `GET /RevokeRefreshToken` while auth'd (to know UserId)
-* set refrehs token to ""
-* maybe even send some signal to tell clients to delete their existing JWTs
-
-# User wants to add/remove email to account
-* `GET /addEmail or GET /removeEmail ?email=[EMAIL TO ADD/REMOVE]` while auth'd (to know UserId)
-* simply add/remove that email to user in UserEmails table
-* don't remove if only 1 email left - or yes if "account deleting" allowed
-
-# User wants to edit user-info
-* `GET /editUserData ?new-data=[MODIFIED DATA]` while auth'd (to know UserId)
-* responds with JWT that has the updated data to keep client JWT up-to-date
-* pretty much send the new user data while auth'd 
-
-# User wants to edit UserId
-Fuck no.
