@@ -123,7 +123,7 @@ PwdLess provides an optional (leave empty to opt-out) "Callbacks" feature. These
 
 * `BeforeSendingNonce`: a URL that will be POSTed to before sending the nonce to the user's identifier (email). The request will include a JSON object containing the user's identifier. If an unsuccessful reponse is received, the nonce will not be sent to the user and an error will be shown instead. This is useful if you want to limit the identifiers that could be used with your app.
 
-* `BeforeSendingToken`: a URL that will be GETed to before sending the token to the user as a response. The request will include an authorization header (following the Bearer scheme) with the token. If an unsuccessful reponse is received, the token will not be sent to the user and an error will be shown instead. This is useful if you want to assign a user an Id if they don't exists in your database, etc.
+* `BeforeSendingToken`: a URL that will be POSTed to before sending the token to the user as a response. The request will include an authorization header (following the Bearer scheme) with the token (with an empty body). If an unsuccessful reponse is received, the token will not be sent to the user and an error will be shown instead. This is useful if you want to assign a user an Id if they don't exists in your database, etc.
 
 # Misc
 
