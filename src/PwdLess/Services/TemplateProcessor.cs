@@ -30,7 +30,7 @@ namespace PwdLess.Services
                 .Replace("{{nonce}}", nonce);
 
             foreach (var kvPair in JsonConvert.DeserializeObject<Dictionary<string, string>>(extraBodyData))
-                body = body.Replace($"{{{kvPair.Key}}}", kvPair.Value);
+                body = body.Replace($"{{{{{kvPair.Key}}}}}", kvPair.Value);
 
             return body;
         }

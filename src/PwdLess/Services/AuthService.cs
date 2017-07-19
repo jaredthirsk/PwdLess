@@ -49,15 +49,22 @@ namespace PwdLess.Services
             _context = context;
         }
 
+
         public bool DoesContactExist(string contact)
         {
             return _context.UserContacts.Any(uc => uc.Contact == contact);
         }
+         
+        public string UserIdOfContact(string contact)
+        {
+            return _context.UserContacts.FirstOrDefault(uc => uc.Contact == contact).UserId;
+        }
+
 
         public async Task<string> AddNonce(string contact, bool isRegistering)
         {
             await DeleteNonce(contact);
-            string nonce = GenerateNonce();
+            string nonce = GenerateRandomString(Int32.Parse(_config["PwdLess:Nonce:Length"]));
             _context.Nonces.Add(new Nonce
             {
                 Contact = contact,
@@ -68,28 +75,6 @@ namespace PwdLess.Services
 
             await _context.SaveChangesAsync();
             return nonce;
-        }
-
-        public void ValidateNonce(string nonce)
-        {
-            Nonce nonceObj = _context.Nonces.OrderBy(n => n.Expiry)
-                                            .FirstOrDefault(n => n.Content == nonce);
-
-            if (nonceObj == null)
-                throw new IndexOutOfRangeException();
-
-            if (nonceObj.Expiry < ToUnixTime(DateTime.Now))
-                throw new ExpiredException(nonceObj.Expiry.ToString() + "     " + ToUnixTime(DateTime.Now).ToString()); // TODO make better
-        }
-
-        public string ContactOfNonce(string nonce)
-        {
-            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).Contact;
-        }
-
-        public bool IsNonceIsRegistering(string nonce)
-        {
-            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).IsRegistering;
         }
 
         public async Task AddUser(User user)
@@ -107,25 +92,27 @@ namespace PwdLess.Services
             });
             await _context.SaveChangesAsync();
         }
-
-        public string UserIdOfContact(string contact)
-        {
-            return _context.UserContacts.FirstOrDefault(uc => uc.Contact == contact).UserId;
-        }
-
+        
         public async Task<string> AddRefreshToken(string userId)
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            user.RefreshToken = GenerateRefreshToken();
+            user.RefreshToken = GenerateRandomString(Int32.Parse(_config["PwdLess:RefreshToken:Length"]));
             user.RefreshTokenExpiry = ToUnixTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:RefreshToken:Expiry"])));
             await _context.SaveChangesAsync();
             return user.RefreshToken;
         }
 
-        public async Task DeleteNonce(string contact)
+
+        public void ValidateNonce(string nonce)
         {
-            _context.Nonces.RemoveRange(_context.Nonces.Where(n => n.Contact == contact));
-            await _context.SaveChangesAsync();
+            Nonce nonceObj = _context.Nonces.OrderBy(n => n.Expiry)
+                                            .FirstOrDefault(n => n.Content == nonce);
+
+            if (nonceObj == null)
+                throw new IndexOutOfRangeException();
+
+            if (nonceObj.Expiry < ToUnixTime(DateTime.Now))
+                throw new ExpiredException(nonceObj.Expiry.ToString() + "     " + ToUnixTime(DateTime.Now).ToString()); // TODO make better
         }
 
         public void ValidateRefreshToken(string refreshToken)
@@ -137,8 +124,27 @@ namespace PwdLess.Services
 
             if (userObj.RefreshTokenExpiry < ToUnixTime(DateTime.Now))
                 throw new ExpiredException(new DateTime(userObj.RefreshTokenExpiry).ToString()); // TODO make better
-            
+
         }
+
+
+        public string ContactOfNonce(string nonce)
+        {
+            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).Contact;
+        }
+
+        public bool IsNonceIsRegistering(string nonce)
+        {
+            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).IsRegistering;
+        }
+
+        public async Task DeleteNonce(string contact)
+        {
+            _context.Nonces.RemoveRange(_context.Nonces.Where(n => n.Contact == contact));
+            await _context.SaveChangesAsync();
+        }
+
+
 
         public string RefreshTokenToAccessToken(string refreshToken)
         {
@@ -152,10 +158,10 @@ namespace PwdLess.Services
             await _context.SaveChangesAsync();
         }
 
-        private string GenerateNonce()
+
+        private string GenerateRandomString(int maxLength)
         {
             // populate a byte[] with crypto RNG bytes
-            int maxLength = Int32.Parse(_config["PwdLess:Nonce:Length"]);
             Byte[] cRBytes = new Byte[maxLength];
             RandomNumberGenerator.Create().GetBytes(cRBytes);
 
@@ -168,11 +174,6 @@ namespace PwdLess.Services
                 .Substring(0, maxLength);
             
             return cRString;
-        }
-
-        private string GenerateRefreshToken()
-        {
-            return GenerateNonce(); // TODO: atually implement
         }
         
         private string GenerateAccessToken(User user, Dictionary<string, object> claims = null)
@@ -201,6 +202,7 @@ namespace PwdLess.Services
 
             return token;
         }
+
 
         private long ToUnixTime(DateTime dateTime)
         {

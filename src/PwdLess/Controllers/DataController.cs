@@ -11,100 +11,68 @@ using Microsoft.Extensions.Logging;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using PwdLess.Models;
+using Microsoft.AspNetCore.Mvc.Filters;
+using PwdLess.Filters;
 
 namespace PwdLess.Controllers
 {
     [Route("[controller]/[action]")]
     public class DataController : Controller
     {
-        private ILogger _logger;
         private AuthContext _context;
 
-        public DataController(ILogger<DataController> logger, AuthContext context)
+        public DataController(AuthContext context)
         {
-            _logger = logger;
             _context = context;
         }
 
-        [Authorize]
-        public async Task<IActionResult> UpdateUserInfo(User user)
+        [Authorize, TraceExceptions, ValidateModel, SetUserId]
+        public async Task<IActionResult> UpdateUserInfo(User user, string userId) // TODO NOW: <- does [SetUserId] even fkn work
         {
-            try
-            {
-                string userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            user.UserId = userId;
+            _context.Users.Update(user); // [BindRequired] properties of User applied
+            await _context.SaveChangesAsync();
 
-                user.UserId = userId;
-
-                _context.Users.Update(user);
-
-                // update stuffs here
-
-                await _context.SaveChangesAsync();
-
-                _logger.LogDebug($"User info updated: {user}.");
-                return Ok($"Success! User info updated.");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-                return BadRequest("Something went wrong.");
-            }
+            return Ok();
         }
 
-        [Authorize]
+        [Authorize, TraceExceptions]
         public async Task<IActionResult> DeleteUser()
         {
-            try
-            {
-                string userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
 
-                _context.Users.Remove(new User() { UserId = userId });
-                _context.UserContacts.RemoveRange(_context.UserContacts.Where(uc => uc.UserId == userId));
+            _context.Users.Remove(new User() { UserId = userId });
+            _context.UserContacts.RemoveRange(_context.UserContacts.Where(uc => uc.UserId == userId));
 
-                await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-                _logger.LogDebug($"User deleted: {userId}");
-                return Ok($"Success! User deleted.");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-                return BadRequest("Something went wrong.");
-            }
+            return Ok();
         }
 
         [Authorize]
-        public async Task<IActionResult> UpdateContact(string contact, ContactOperation operation)
-        {
-            try
+        public async Task<IActionResult> UpdateContact(string contact, ContactOperation operation) // TODO: split into NonceToAddContact(nonce) and RemoveContact(contact)
+        {    
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            switch (operation)
             {
-                string userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-                switch (operation)
-                {
-                    case ContactOperation.Add: // TODO: validate contact
-                        _context.UserContacts.Add(new UserContact() { Contact = contact, UserId = userId });
-                        break;
-                    case ContactOperation.Remove:
-                        if (await _context.UserContacts.CountAsync(uc => uc.UserId == userId) <= 1)
-                            return BadRequest($"Sorry! Can't Remove last contact."); // TODO: overhaul exception system
-                        else
-                            _context.UserContacts.Remove(new UserContact() { Contact = contact, UserId = userId });
-                        break;
-                    default:
-                        break;
-                }
-
-                await _context.SaveChangesAsync();
-
-                _logger.LogDebug($"{operation.ToString()}ed contact: {contact}");
-                return Ok($"Success! Contact Added");
+                case ContactOperation.Add: // TODO: validate contact
+                    _context.UserContacts.Add(new UserContact() { Contact = contact, UserId = userId });
+                    break;
+                case ContactOperation.Remove:
+                    if (await _context.UserContacts.CountAsync(uc => uc.UserId == userId) <= 1)
+                        return BadRequest($"Sorry! Can't Remove last contact."); // TODO: overhaul exception system
+                    else
+                        _context.UserContacts.Remove(new UserContact() { Contact = contact, UserId = userId });
+                    break;
+                default:
+                    break;
             }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-                return BadRequest("Something went wrong.");
-            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogDebug($"{operation.ToString()}ed contact: {contact}");
+            return Ok($"Success! Contact Added");
         }
 
 

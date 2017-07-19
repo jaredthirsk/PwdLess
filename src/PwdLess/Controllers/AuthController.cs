@@ -37,31 +37,18 @@ namespace PwdLess.Controllers
         {
             try
             {
-                //if (_authCtx.UserEmails.Contains(new UserContacts { Contact = email }))
-                //    _authCtx.Nonces.Add(new Nonce { Content = _authService. })
-
                 if (_authService.DoesContactExist(contact)) // Returning user
                     await _senderService.SendAsync(contact, await _authService.AddNonce(contact, false), "ReturningUser");
                 else // New user
                     await _senderService.SendAsync(contact, await _authService.AddNonce(contact, true), "NewUser");
-
-                // create a nonce/token pair, store them, get Nonce
-                //var nonce = await _authService.CreateAndStoreNonce(email, type);
-
-                // run the BeforeSendingNonce callback, put result in message body
-                //var extraBodyData = await _callbackService.BeforeSendingNonce(email, type) ?? "{}";
-
-                // create body for message to be sent to user & send it
-                //var body = _templateProcessor.ProcessTemplate(nonce, extraBodyData, type);
-                //await _senderService.SendAsync(email, body);
-
+                
                 _logger.LogDebug($"A nonce was sent to {contact}.");
                 return Ok($"Success! Sent nonce to {contact}.");
             }
-            //catch (InvalidIdentifierException e)
+            //catch (InvalidContactException e)
             //{
             //    _logger.LogError(e.ToString());
-            //    return BadRequest("Identifier invalid.");
+            //    return BadRequest("Contact invalid.");
             //}  
             catch (Exception e)
             {
@@ -84,7 +71,7 @@ namespace PwdLess.Controllers
                     if (!ModelState.IsValid)
                         return BadRequest("You need to supply all additional user infomation.");
 
-                    user.UserId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12))); /* ?? user.UserId */ // Users can't choose their own UserId, or TODO: they can but it can't be "admin"
+                    user.UserId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12)); /* ?? user.UserId */ // Users can't choose their own UserId, or TODO: they can but it can't be "admin"
 
                     await _authService.AddUser(user); // TODO: batch all db CUD calls together
                     await _authService.AddUserContact(user.UserId, contact);

@@ -28,7 +28,7 @@ namespace PwdLess.Services
             _config = config;
         }
 
-        public async Task<string> BeforeSendingNonce(string identifier, string type)
+        public async Task<string> BeforeSendingNonce(string contact, string type)
         {
             string uri = _config["PwdLess:Callbacks:BeforeSendingNonce"];
 
@@ -38,7 +38,7 @@ namespace PwdLess.Services
 
             HttpContent content = new StringContent(JsonConvert.SerializeObject(new
                                                     {
-                                                        Identifier = identifier,
+                                                        Identifier = contact,
                                                         Type = type
                                                     }), 
                                                     Encoding.UTF8,
@@ -51,7 +51,7 @@ namespace PwdLess.Services
 
             // throw an exception if not successful
             if (!response.IsSuccessStatusCode)
-                throw new InvalidIdentifierException(identifier);
+                throw new InvalidContactException(contact);
             else
                 return await response.Content.ReadAsStringAsync();
 
@@ -80,9 +80,9 @@ namespace PwdLess.Services
         }
     }
 
-    public class InvalidIdentifierException : Exception
+    public class InvalidContactException : Exception
     {
-        public InvalidIdentifierException(string identifier)
-            : base($"Identifier invalid: {identifier}") { }
+        public InvalidContactException(string contact)
+            : base($"Identifier invalid: {contact}") { }
     }
 }
