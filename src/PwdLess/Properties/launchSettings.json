@@ -18,7 +18,7 @@
     },
     "PwdLess": {
       "commandName": "Project",
-      "commandLineArgs": "--url \"http://loclahost:5000\" ",
+      "commandLineArgs": "--url \"http://localhost:5000\" ",
       "launchUrl": "http://localhost:5000/auth/",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

@@ -1,5 +1,19 @@
-# PwdLess
+# Passwordless authentication: PwdLess 2.0
 <img src="http://pwdless.biarity.me/images/PwdLessLogo.svg" width="150">
+
+
+
+## Under development, a version of PwdLess that utilizes a database for token revokability.
+
+
+## TODO
+* Documentation
+* Better error messages
+* Admin panel
+* Last known IP
+* SPA starter as js functions
+* Formal test client
+* Docker
 
 PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a nonce, possibly in the form of a URL. Once the user opens the link (or manually types the nonce into your app), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run. This makes it platform-agnostic so you can easily integrate it into any tech-stack.
 

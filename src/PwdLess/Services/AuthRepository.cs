@@ -75,6 +75,7 @@ namespace PwdLess.Services
 
         public void ValidateNonce(string nonce)
         {
+            // PurgeExpiredNonces(); // optional, can guarantee will run regularly // Nope, won't use to maintain log
             Nonce nonceObj = _context.Nonces.OrderBy(n => n.Expiry)
                                             .FirstOrDefault(n => n.Content == nonce);
 
@@ -89,7 +90,7 @@ namespace PwdLess.Services
         {
             User userObj = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
 
-            if (userObj.RefreshToken == "")
+            if (userObj == null || userObj.RefreshToken == "")
                 throw new IndexOutOfRangeException();
 
             if (userObj.RefreshTokenExpiry < _authHelper.EpochNow)
@@ -112,6 +113,8 @@ namespace PwdLess.Services
         {
             _context.Nonces.RemoveRange(_context.Nonces.Where(n => n.Contact == contact));
         }
+
+
 
 
 

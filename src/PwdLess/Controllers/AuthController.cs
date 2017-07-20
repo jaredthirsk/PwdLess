@@ -35,7 +35,7 @@ namespace PwdLess.Controllers
         }
         
         [HandleExceptions]
-        public async Task<IActionResult> SendNonce(string contact, bool isAddingContact /*, string extraData = "email"*/)
+        public async Task<IActionResult> SendNonce(string contact, bool isAddingContact = false /*, string extraData = "email"*/)
         {
             if (_authRepo.DoesContactExist(contact)) // Returning user
                 await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.ReturningUser), "ReturningUser");
@@ -62,8 +62,9 @@ namespace PwdLess.Controllers
 
                 user.UserId = userId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12))); /* ?? user.UserId */ // Users can't choose their own UserId, or TODO: they can but it can't be "admin" // TODO: make more elegant
 
-                 _authRepo.AddUser(user);
-                 _authRepo.AddUserContact(userId, contact);
+                _authRepo.AddUser(user);
+                _authRepo.AddUserContact(userId, contact);
+                await _authRepo.SaveDbChangesAsync();
             }
             else {
                 userId = _authRepo.UserIdOfContact(contact);

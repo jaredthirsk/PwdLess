@@ -23,7 +23,7 @@ namespace PwdLess.Services
             _config = config;
         }
 
-        public string ProcessTemplate(string nonce, string template, string extraBodyData)
+        public string ProcessTemplate(string nonce, string template, string extraBodyData) // TODO: allow access to context to include personal User info in templates, ie. {{FavouriteColour}} 
         {
 
             var body = _config[$"PwdLess:EmailContents:{template}:Body"]

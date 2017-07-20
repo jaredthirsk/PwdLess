@@ -66,6 +66,7 @@ namespace PwdLess.Services
                 { "exp", ToEpochTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:AccessToken:Expiry"]))) },
                 { "aud", _config["PwdLess:AccessToken:Audience"] },
                 { "userInfo", JsonConvert.SerializeObject(new {
+                    user.FavouriteColour
                 }) },
                 { "userContacts",  userContacts }
             };
