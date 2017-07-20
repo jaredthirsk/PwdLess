@@ -113,8 +113,8 @@ namespace PwdLess.Services
             // SHA1 the bytes to normalize across platfroms
             byte[] sha1 = SHA1.Create().ComputeHash(cRBytes);
 
-            // convert bytes to string via HEX
-            string cRString = BitConverter.ToString(cRBytes)
+            // convert SHA1 bytes to string via HEX
+            string cRString = BitConverter.ToString(sha1)
                 .Replace("-", "")
                 .Substring(0, maxLength);
 
