@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System;
 using System.Collections.Generic;
 
 namespace PwdLess.Models
@@ -15,5 +16,9 @@ namespace PwdLess.Models
 
         [BindNever]
         public ICollection<UserContact> UserContacts { get; set; }
+
+        [BindRequired]
+        public string FavouriteColour { get; set; }
+
     }
 }

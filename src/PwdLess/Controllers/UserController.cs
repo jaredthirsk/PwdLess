@@ -30,7 +30,7 @@ namespace PwdLess.Controllers
         public async Task<IActionResult> UpdateUserInfo(User user, string userId)
         {
             user.UserId = userId;
-            _context.Users.Update(user); // [BindRequired] properties of User applied
+            _context.Users.Update(user); // based on [BindRequired] & [BindNever] properties of User applied
             await _context.SaveChangesAsync();
 
             return Ok();
@@ -46,8 +46,6 @@ namespace PwdLess.Controllers
 
             return Ok();
         }
-        
-
 
     }
 }
