@@ -40,7 +40,8 @@ namespace PwdLess
 
             // PwdLess services
             services.AddSingleton(Configuration);
-            services.AddScoped<IAuthRepository, AuthRepository>();
+            services.AddScoped<IAuthHelperService, AuthHelperService>();
+            services.AddScoped<AuthRepository>();
             services.AddScoped<ISenderService, ConsoleTestingSenderService>(); // CAN REPLACE WITH SenderService
             services.AddScoped<ITemplateProcessor, EmailTemplateProcessor>();
             services.AddScoped<ICallbackService, CallbackService>();

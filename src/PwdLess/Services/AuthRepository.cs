@@ -12,31 +12,7 @@ using System.Threading.Tasks;
 
 namespace PwdLess.Services
 {
-    /// <summary>
-    /// Handles creating nonces and tokens.
-    /// Also handles storing them in a cache and retrieving them if present.
-    /// </summary>
-    public interface IAuthRepository
-    {
-        bool DoesContactExist(string contact);
-        Task<string> AddNonce(string contact, UserState userState);
-
-        void ValidateNonce(string nonce);
-        string ContactOfNonce(string nonce);
-        UserState GetNonceUserState(string nonce);
-        Task AddUser(User user);
-        Task AddUserContact(string userId, string contact);
-        string UserIdOfContact(string contact);
-        Task<string> AddRefreshToken(string userId);
-        Task DeleteNonce(string contact);
-
-        void ValidateRefreshToken(string refreshToken);
-        string RefreshTokenToAccessToken(string refreshToken);
-
-        Task RevokeRefreshToken(string userId);
-    }
-
-    public class AuthRepository : IAuthRepository
+    public class AuthRepository
     {
         private AuthContext _context;
         private IAuthHelperService _authHelper;
@@ -59,9 +35,9 @@ namespace PwdLess.Services
         }
 
 
-        public async Task<string> AddNonce(string contact, UserState userState)
+        public string AddNonce(string contact, UserState userState)
         {
-            await DeleteNonce(contact);
+            DeleteNonce(contact);
             string nonce = _authHelper.GenerateNonce();
             _context.Nonces.Add(new Nonce
             {
@@ -71,32 +47,28 @@ namespace PwdLess.Services
                 Expiry = _authHelper.EpochNonceExpiry
             });
 
-            await _context.SaveChangesAsync();
             return nonce;
         }
 
-        public async Task AddUser(User user)
+        public void AddUser(User user)
         {
             _context.Users.Add(user);
-            await _context.SaveChangesAsync();
         }
 
-        public async Task AddUserContact(string userId, string contact)
+        public void AddUserContact(string userId, string contact)
         {
             _context.UserContacts.Add(new UserContact()
             {
                 Contact = contact,
                 UserId = userId
             });
-            await _context.SaveChangesAsync();
         }
         
-        public async Task<string> AddRefreshToken(string userId)
+        public string AddRefreshToken(string userId)
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
             user.RefreshToken = _authHelper.GenerateRefreshToken();
             user.RefreshTokenExpiry = _authHelper.EpochRefreshTokenExpiry;
-            await _context.SaveChangesAsync();
             return user.RefreshToken;
         }
 
@@ -136,10 +108,9 @@ namespace PwdLess.Services
             return _context.Nonces.FirstOrDefault(n => n.Content == nonce).UserState;
         }
 
-        public async Task DeleteNonce(string contact)
+        public void DeleteNonce(string contact)
         {
             _context.Nonces.RemoveRange(_context.Nonces.Where(n => n.Contact == contact));
-            await _context.SaveChangesAsync();
         }
 
 
@@ -150,11 +121,30 @@ namespace PwdLess.Services
             return _authHelper.GenerateAccessToken(user, _context.UserContacts.Where(uc => uc.UserId == user.UserId).Select(uc => uc.Contact).ToList());
         }
 
-        public async Task RevokeRefreshToken(string userId)
+        public void RevokeRefreshToken(string userId)
         {
             _context.Users.FirstOrDefault(u => u.UserId == userId).RefreshToken = "";
+        }
+
+
+
+        public void RemoveUserContact(string contact, string userId)
+        {
+            _context.UserContacts.Remove(new UserContact() { Contact = contact, UserId = userId });
+        }
+
+        public bool IsLastUserContact(string userId)
+        {
+            return  _context.UserContacts.Count(uc => uc.UserId == userId) <= 1;
+        }
+
+
+
+        public async Task SaveDbChangesAsync()
+        {
             await _context.SaveChangesAsync();
         }
+
     }
     
 }

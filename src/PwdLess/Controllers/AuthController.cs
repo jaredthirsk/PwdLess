@@ -16,37 +16,35 @@ using PwdLess.Filters;
 namespace PwdLess.Controllers
 {
     [Route("[controller]/[action]")]
-    public class AuthController : Controller // TODO REMOVE CONTEXT AND MOVE ALL DB STUFF TO NEW REPOSITORY CLASS
+    public class AuthController : Controller
     {
-        private IAuthRepository _authRepo;
+        private AuthRepository _authRepo;
         private ISenderService _senderService;
         private ICallbackService _callbackService;
         private ILogger _logger;
-        private AuthContext _context;
 
-        public AuthController(IAuthRepository authRepo, 
+        public AuthController(AuthRepository authRepo, 
             ISenderService senderService, 
             ICallbackService callbackService,
-            ILogger<AuthController> logger,
-            AuthContext context)
+            ILogger<AuthController> logger)
         {
             _authRepo = authRepo;
             _senderService = senderService;
             _callbackService = callbackService;
             _logger = logger;
-            _context = context;
         }
         
         [HandleExceptions]
         public async Task<IActionResult> SendNonce(string contact, bool isAddingContact /*, string extraData = "email"*/)
         {
             if (_authRepo.DoesContactExist(contact)) // Returning user
-                await _senderService.SendAsync(contact, await _authRepo.AddNonce(contact, UserState.ReturningUser), "ReturningUser");
+                await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.ReturningUser), "ReturningUser");
             else if (isAddingContact) // Returning user adding contact
-                await _senderService.SendAsync(contact, await _authRepo.AddNonce(contact, UserState.AddingContact), "AddingContact");
+                await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.AddingContact), "AddingContact");
             else // New user
-                await _senderService.SendAsync(contact, await _authRepo.AddNonce(contact, UserState.NewUser), "NewUser");
-                
+                await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.NewUser), "NewUser");
+
+            await _authRepo.SaveDbChangesAsync();
             return Ok();   
         }
 
@@ -62,19 +60,19 @@ namespace PwdLess.Controllers
             {
                 if (!ModelState.IsValid) return BadRequest("You need to supply all additional user infomation.");
 
-                user.UserId = userId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12))); /* ?? user.UserId */ // Users can't choose their own UserId, or TODO: they can but it can't be "admin"
+                user.UserId = userId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12))); /* ?? user.UserId */ // Users can't choose their own UserId, or TODO: they can but it can't be "admin" // TODO: make more elegant
 
-                await _authRepo.AddUser(user); // TODO: batch all db CUD calls together
-                await _authRepo.AddUserContact(userId, contact);
+                 _authRepo.AddUser(user);
+                 _authRepo.AddUserContact(userId, contact);
             }
             else {
                 userId = _authRepo.UserIdOfContact(contact);
             }
             
-            var refreshToken = await _authRepo.AddRefreshToken(userId);
+            var refreshToken =  _authRepo.AddRefreshToken(userId);
+            _authRepo.DeleteNonce(contact);
 
-            await _authRepo.DeleteNonce(contact);
-        
+            await _authRepo.SaveDbChangesAsync();
             return Ok(refreshToken);
         }
 
@@ -83,20 +81,24 @@ namespace PwdLess.Controllers
         {
             _authRepo.ValidateNonce(nonce);
             string contact = _authRepo.ContactOfNonce(nonce);
-            await _authRepo.AddUserContact(userId, contact);
-            await _authRepo.DeleteNonce(contact);
+            _authRepo.AddUserContact(userId, contact);
+            _authRepo.DeleteNonce(contact);
+
+            await _authRepo.SaveDbChangesAsync();
             return Ok();
         }
 
         [Authorize, SetUserId, HandleExceptions]
         public async Task<IActionResult> RemoveContact(string contact, string userId)
         {
-            if (await _context.UserContacts.CountAsync(uc => uc.UserId == userId) <= 1)
-                return BadRequest($"Sorry! Can't Remove last contact.");
-            else
-                _context.UserContacts.Remove(new UserContact() { Contact = contact, UserId = userId });
+            if (_authRepo.IsLastUserContact(userId)) return BadRequest($"Sorry! Can't Remove last contact.");
+
+            _authRepo.RemoveUserContact(contact, userId);
+
+            await _authRepo.SaveDbChangesAsync();
             return Ok();
         }
+
 
         [HandleExceptions]
         public IActionResult RefreshTokenToAccessToken(string refreshToken)
@@ -110,7 +112,8 @@ namespace PwdLess.Controllers
         [Authorize, SetUserId, HandleExceptions]
         public async Task<IActionResult> RevokeRefreshToken(string userId)
         {
-            await _authRepo.RevokeRefreshToken(userId);
+            _authRepo.RevokeRefreshToken(userId);
+            await _authRepo.SaveDbChangesAsync();
             return Ok();
         }
 
