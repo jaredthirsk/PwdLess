@@ -16,14 +16,14 @@ namespace PwdLess.Services
     /// Handles creating nonces and tokens.
     /// Also handles storing them in a cache and retrieving them if present.
     /// </summary>
-    public interface IAuthService
+    public interface IAuthRepository
     {
         bool DoesContactExist(string contact);
-        Task<string> AddNonce(string contact, bool isRegistering);
+        Task<string> AddNonce(string contact, UserState userState);
 
         void ValidateNonce(string nonce);
         string ContactOfNonce(string nonce);
-        bool IsNonceIsRegistering(string nonce);
+        UserState GetNonceUserState(string nonce);
         Task AddUser(User user);
         Task AddUserContact(string userId, string contact);
         string UserIdOfContact(string contact);
@@ -36,17 +36,15 @@ namespace PwdLess.Services
         Task RevokeRefreshToken(string userId);
     }
 
-    public class AuthService : IAuthService
+    public class AuthRepository : IAuthRepository
     {
-        private IConfigurationRoot _config;
-        private IDistributedCache _cache;
         private AuthContext _context;
+        private IAuthHelperService _authHelper;
 
-        public AuthService(IDistributedCache cache, IConfigurationRoot config, AuthContext context)
+        public AuthRepository(AuthContext context, IAuthHelperService authHelper)
         {
-            _config = config;
-            _cache = cache;
             _context = context;
+            _authHelper = authHelper;
         }
 
 
@@ -61,16 +59,16 @@ namespace PwdLess.Services
         }
 
 
-        public async Task<string> AddNonce(string contact, bool isRegistering)
+        public async Task<string> AddNonce(string contact, UserState userState)
         {
             await DeleteNonce(contact);
-            string nonce = GenerateRandomString(Int32.Parse(_config["PwdLess:Nonce:Length"]));
+            string nonce = _authHelper.GenerateNonce();
             _context.Nonces.Add(new Nonce
             {
                 Contact = contact,
-                IsRegistering = isRegistering,
+                UserState = userState,
                 Content = nonce,
-                Expiry = ToUnixTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:Nonce:Expiry"])))
+                Expiry = _authHelper.EpochNonceExpiry
             });
 
             await _context.SaveChangesAsync();
@@ -96,8 +94,8 @@ namespace PwdLess.Services
         public async Task<string> AddRefreshToken(string userId)
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            user.RefreshToken = GenerateRandomString(Int32.Parse(_config["PwdLess:RefreshToken:Length"]));
-            user.RefreshTokenExpiry = ToUnixTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:RefreshToken:Expiry"])));
+            user.RefreshToken = _authHelper.GenerateRefreshToken();
+            user.RefreshTokenExpiry = _authHelper.EpochRefreshTokenExpiry;
             await _context.SaveChangesAsync();
             return user.RefreshToken;
         }
@@ -111,8 +109,8 @@ namespace PwdLess.Services
             if (nonceObj == null)
                 throw new IndexOutOfRangeException();
 
-            if (nonceObj.Expiry < ToUnixTime(DateTime.Now))
-                throw new ExpiredException(nonceObj.Expiry.ToString() + "     " + ToUnixTime(DateTime.Now).ToString()); // TODO make better
+            if (nonceObj.Expiry < _authHelper.EpochNow)
+                throw new Exception(nonceObj.Expiry.ToString() + "     " + _authHelper.EpochNow.ToString()); // TODO make better
         }
 
         public void ValidateRefreshToken(string refreshToken)
@@ -122,8 +120,8 @@ namespace PwdLess.Services
             if (userObj.RefreshToken == "")
                 throw new IndexOutOfRangeException();
 
-            if (userObj.RefreshTokenExpiry < ToUnixTime(DateTime.Now))
-                throw new ExpiredException(new DateTime(userObj.RefreshTokenExpiry).ToString()); // TODO make better
+            if (userObj.RefreshTokenExpiry < _authHelper.EpochNow)
+                throw new Exception(new DateTime(userObj.RefreshTokenExpiry).ToString()); // TODO make better
 
         }
 
@@ -133,9 +131,9 @@ namespace PwdLess.Services
             return _context.Nonces.FirstOrDefault(n => n.Content == nonce).Contact;
         }
 
-        public bool IsNonceIsRegistering(string nonce)
+        public UserState GetNonceUserState(string nonce)
         {
-            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).IsRegistering;
+            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).UserState;
         }
 
         public async Task DeleteNonce(string contact)
@@ -149,7 +147,7 @@ namespace PwdLess.Services
         public string RefreshTokenToAccessToken(string refreshToken)
         {
             var user = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
-            return GenerateAccessToken(user);
+            return _authHelper.GenerateAccessToken(user, _context.UserContacts.Where(uc => uc.UserId == user.UserId).Select(uc => uc.Contact).ToList());
         }
 
         public async Task RevokeRefreshToken(string userId)
@@ -157,69 +155,6 @@ namespace PwdLess.Services
             _context.Users.FirstOrDefault(u => u.UserId == userId).RefreshToken = "";
             await _context.SaveChangesAsync();
         }
-
-
-        private string GenerateRandomString(int maxLength)
-        {
-            // populate a byte[] with crypto RNG bytes
-            Byte[] cRBytes = new Byte[maxLength];
-            RandomNumberGenerator.Create().GetBytes(cRBytes);
-
-            // SHA1 the bytes to normalize across platfroms
-            byte[] sha1 = SHA1.Create().ComputeHash(cRBytes);
-
-            // convert bytes to string via HEX
-            string cRString = BitConverter.ToString(cRBytes)
-                .Replace("-", "")
-                .Substring(0, maxLength);
-            
-            return cRString;
-        }
-        
-        private string GenerateAccessToken(User user, Dictionary<string, object> claims = null)
-        {
-            var payload = new Dictionary<string, object>
-            {
-                { "sub", user.UserId },
-                { "iss", _config["PwdLess:AccessToken:Issuer"]},
-                { "iat", ToUnixTime(DateTime.Now) },
-                { "exp", ToUnixTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:AccessToken:Expiry"]))) },
-                { "aud", _config["PwdLess:AccessToken:Audience"] },
-                { "userInfo", JsonConvert.SerializeObject(new {
-                }) },
-                { "userContacts",  _context.UserContacts.Where(uc => uc.UserId == user.UserId).Select(uc => uc.Contact) }
-            };
-
-            if (claims != null)
-            {
-                foreach (var kvPair in claims)
-                    payload.Add(kvPair.Key, kvPair.Value);
-            }
-
-            string token = JWT.Encode(payload,
-                Encoding.UTF8.GetBytes(_config["PwdLess:AccessToken:SecretKey"]),
-                JwsAlgorithm.HS256);
-
-            return token;
-        }
-
-
-        private long ToUnixTime(DateTime dateTime)
-        {
-            return (int)(dateTime
-                .ToUniversalTime()
-                .Subtract(new DateTime(1970, 1, 1)))
-                .TotalSeconds;
-        }
-
     }
-
-
-    [Serializable]
-    public class ExpiredException : Exception
-    {
-        public ExpiredException() { }
-        public ExpiredException(string message) : base(message) { }
-        public ExpiredException(string message, Exception inner) : base(message, inner) { }
-    }
+    
 }

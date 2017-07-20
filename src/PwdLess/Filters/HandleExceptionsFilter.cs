@@ -10,11 +10,10 @@ using System.Threading.Tasks;
 
 namespace PwdLess.Filters
 {
-    public class TraceExceptionsAttribute : ExceptionFilterAttribute
+    public class HandleExceptionsAttribute : ExceptionFilterAttribute
     {
         public override void OnException(ExceptionContext context)
         {
-            //_logger.LogTrace($"Exception raised: {context.Exception.ToString()}");
             context.Result = new BadRequestObjectResult("Something went wrong."); // TODO: customise so some errors are more specific
         }
     }

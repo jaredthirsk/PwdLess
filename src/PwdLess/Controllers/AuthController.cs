@@ -11,156 +11,112 @@ using Microsoft.Extensions.Logging;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using PwdLess.Models;
+using PwdLess.Filters;
 
 namespace PwdLess.Controllers
 {
     [Route("[controller]/[action]")]
-    public class AuthController : Controller
+    public class AuthController : Controller // TODO REMOVE CONTEXT AND MOVE ALL DB STUFF TO NEW REPOSITORY CLASS
     {
-        private IAuthService _authService;
+        private IAuthRepository _authRepo;
         private ISenderService _senderService;
         private ICallbackService _callbackService;
         private ILogger _logger;
+        private AuthContext _context;
 
-        public AuthController(IAuthService authService, 
+        public AuthController(IAuthRepository authRepo, 
             ISenderService senderService, 
             ICallbackService callbackService,
-            ILogger<AuthController> logger)
+            ILogger<AuthController> logger,
+            AuthContext context)
         {
-            _authService = authService;
+            _authRepo = authRepo;
             _senderService = senderService;
             _callbackService = callbackService;
             _logger = logger;
+            _context = context;
         }
         
-        public async Task<IActionResult> SendNonce(string contact/*, string extraData = "email"*/)
+        [HandleExceptions]
+        public async Task<IActionResult> SendNonce(string contact, bool isAddingContact /*, string extraData = "email"*/)
         {
-            try
-            {
-                if (_authService.DoesContactExist(contact)) // Returning user
-                    await _senderService.SendAsync(contact, await _authService.AddNonce(contact, false), "ReturningUser");
-                else // New user
-                    await _senderService.SendAsync(contact, await _authService.AddNonce(contact, true), "NewUser");
+            if (_authRepo.DoesContactExist(contact)) // Returning user
+                await _senderService.SendAsync(contact, await _authRepo.AddNonce(contact, UserState.ReturningUser), "ReturningUser");
+            else if (isAddingContact) // Returning user adding contact
+                await _senderService.SendAsync(contact, await _authRepo.AddNonce(contact, UserState.AddingContact), "AddingContact");
+            else // New user
+                await _senderService.SendAsync(contact, await _authRepo.AddNonce(contact, UserState.NewUser), "NewUser");
                 
-                _logger.LogDebug($"A nonce was sent to {contact}.");
-                return Ok($"Success! Sent nonce to {contact}.");
-            }
-            //catch (InvalidContactException e)
-            //{
-            //    _logger.LogError(e.ToString());
-            //    return BadRequest("Contact invalid.");
-            //}  
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-                return BadRequest("Something went wrong.");
-            }
-            
+            return Ok();   
         }
 
+        [HandleExceptions]
         public async Task<IActionResult> NonceToRefreshToken(string nonce, User user = null)
         {
-            try
+            _authRepo.ValidateNonce(nonce);
+
+            string userId;
+            string contact = _authRepo.ContactOfNonce(nonce);
+
+            if (_authRepo.GetNonceUserState(nonce) == UserState.NewUser)
             {
-                _authService.ValidateNonce(nonce);
+                if (!ModelState.IsValid) return BadRequest("You need to supply all additional user infomation.");
 
-                var contact = _authService.ContactOfNonce(nonce);
+                user.UserId = userId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12))); /* ?? user.UserId */ // Users can't choose their own UserId, or TODO: they can but it can't be "admin"
 
-                if (_authService.IsNonceIsRegistering(nonce))
-                {
-                    if (!ModelState.IsValid)
-                        return BadRequest("You need to supply all additional user infomation.");
+                await _authRepo.AddUser(user); // TODO: batch all db CUD calls together
+                await _authRepo.AddUserContact(userId, contact);
+            }
+            else {
+                userId = _authRepo.UserIdOfContact(contact);
+            }
+            
+            var refreshToken = await _authRepo.AddRefreshToken(userId);
 
-                    user.UserId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12)); /* ?? user.UserId */ // Users can't choose their own UserId, or TODO: they can but it can't be "admin"
-
-                    await _authService.AddUser(user); // TODO: batch all db CUD calls together
-                    await _authService.AddUserContact(user.UserId, contact);
-                }
-
-                
-                var userId = _authService.UserIdOfContact(contact);
-                var refreshToken = await _authService.AddRefreshToken(userId);
-
-                await _authService.DeleteNonce(contact);
-
-                
-                //// get a Nonce's associated token
-                //var token = await _authService.GetTokenFromNonce(nonce);
-                //
-                //// run the BeforeSendingToken callback, discard result
-                //await _callbackService.BeforeSendingToken(token);
+            await _authRepo.DeleteNonce(contact);
         
-                _logger.LogDebug($"Refresh token sent: {refreshToken}");
-                return Ok(refreshToken);
-            }
-            catch (ExpiredException e)
-            {
-                _logger.LogDebug($"A requested nonce was expired. Nonce: {nonce}. Exception: {e}");
-                return NotFound("Nonce expired.");
-            }
-            catch (IndexOutOfRangeException e)
-            {
-                _logger.LogDebug($"A requested nonce's contact was not found. Nonce: {nonce}. Exception: {e}");
-                return NotFound("Nonce not found.");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-                return BadRequest("Something went wrong.");
-            }
-        
+            return Ok(refreshToken);
         }
 
+        [Authorize, SetUserId, HandleExceptions]
+        public async Task<IActionResult> NonceToAddContact(string nonce, string userId)
+        {
+            _authRepo.ValidateNonce(nonce);
+            string contact = _authRepo.ContactOfNonce(nonce);
+            await _authRepo.AddUserContact(userId, contact);
+            await _authRepo.DeleteNonce(contact);
+            return Ok();
+        }
+
+        [Authorize, SetUserId, HandleExceptions]
+        public async Task<IActionResult> RemoveContact(string contact, string userId)
+        {
+            if (await _context.UserContacts.CountAsync(uc => uc.UserId == userId) <= 1)
+                return BadRequest($"Sorry! Can't Remove last contact.");
+            else
+                _context.UserContacts.Remove(new UserContact() { Contact = contact, UserId = userId });
+            return Ok();
+        }
+
+        [HandleExceptions]
         public IActionResult RefreshTokenToAccessToken(string refreshToken)
         {
-            try
-            {
-                _authService.ValidateRefreshToken(refreshToken);
-                string accessToken = _authService.RefreshTokenToAccessToken(refreshToken);
-
-                _logger.LogDebug($"Access token sent: {accessToken}");
-                return Ok(accessToken);
-            }
-            catch (ExpiredException e)
-            {
-                _logger.LogDebug($"A refrenced refresh token was expired. Refresh token: {refreshToken}. Exception: {e}");
-                return NotFound("Refresh token not found.");
-            }
-            catch (IndexOutOfRangeException e)
-            {
-                _logger.LogDebug($"A refrenced refresh token was not found. Refresh token: {refreshToken}. Exception: {e}");
-                return NotFound("Refresh token not found.");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-                return BadRequest("Something went wrong.");
-            }
+            _authRepo.ValidateRefreshToken(refreshToken);
+            string accessToken = _authRepo.RefreshTokenToAccessToken(refreshToken);
+            
+            return Ok(accessToken);
         }
 
-        [Authorize]
-        public async Task<IActionResult> RevokeRefreshToken()
+        [Authorize, SetUserId, HandleExceptions]
+        public async Task<IActionResult> RevokeRefreshToken(string userId)
         {
-            try
-            {
-                string userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
-
-                await _authService.RevokeRefreshToken(userId);
-
-
-                _logger.LogDebug($"Refresh token for user was revoked: {userId}.");
-                return Ok($"Success! Refresh token revoked.");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.ToString());
-                return BadRequest("Something went wrong.");
-            }
+            await _authRepo.RevokeRefreshToken(userId);
+            return Ok();
         }
 
 
 
-        [Authorize]
+        [Authorize, HandleExceptions]
         /// Validates tokens sent via authorization header
         /// Eg. Authorization: Bearer [token]
         ///     client_id    : defaultClient
@@ -176,7 +132,7 @@ namespace PwdLess.Controllers
             }
             sb.Length--; // remove last comma
             sb.Append("\n}"); // add closing parens
-            //sb.Replace("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "sub");
+            sb.Replace("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "sub");
             var claimsJson = sb.ToString();
 
 
