@@ -20,17 +20,14 @@ namespace PwdLess.Controllers
     {
         private AuthRepository _authRepo;
         private ISenderService _senderService;
-        private ICallbackService _callbackService;
         private ILogger _logger;
 
         public AuthController(AuthRepository authRepo, 
-            ISenderService senderService, 
-            ICallbackService callbackService,
+            ISenderService senderService,
             ILogger<AuthController> logger)
         {
             _authRepo = authRepo;
             _senderService = senderService;
-            _callbackService = callbackService;
             _logger = logger;
         }
         

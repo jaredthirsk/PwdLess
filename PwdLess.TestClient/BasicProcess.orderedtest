@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<OrderedTest name="OrderedTest1" storage="d:\projects\aspnetcore\pwdless\pwdless\pwdless.testclient\orderedtest1.orderedtest" id="15aa2bfe-01bc-4cfc-a4e5-9235eadb520e" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
-  <TestLinks>
-    <TestLink id="42a996c5-a6f9-6050-5b29-204f907c4e60" name="FirstLetPwdLessSendNonce" storage="bin\release\pwdless.testclient.dll" type="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestElement, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.ObjectModel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <TestLink id="676bf9fb-c313-feac-51ae-270b810ceee0" name="SecondGetNonceFromEmail" storage="bin\release\pwdless.testclient.dll" type="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestElement, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.ObjectModel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <TestLink id="7ca53e6e-3ff0-168d-2b8d-06c343a805a7" name="ThirdGetJwtUsingNonce" storage="bin\release\pwdless.testclient.dll" type="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestElement, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.ObjectModel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <TestLink id="416e00e6-a813-f719-09c5-288e31727fe8" name="FourthDecodeValidateJwt" storage="bin\release\pwdless.testclient.dll" type="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestElement, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.ObjectModel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  </TestLinks>
-</OrderedTest>

@@ -45,7 +45,6 @@ namespace PwdLess
             services.AddScoped<AuthRepository>();
             services.AddScoped<ISenderService, ConsoleTestingSenderService>(); // CAN REPLACE WITH SenderService
             services.AddScoped<ITemplateProcessor, EmailTemplateProcessor>();
-            services.AddScoped<ICallbackService, CallbackService>();
 
             // rate-limiting services
             services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
