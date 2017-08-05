@@ -77,7 +77,7 @@ namespace PwdLess.Services
         public string AddUser(User user)
         {
             user.DateCreated = _authHelper.EpochNow;
-            user.UserId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12))); // TODO: move to AuthHelperService
+            user.UserId = _authHelper.GenerateUserId();
             _context.Users.Add(user);
             return user.UserId;
         }

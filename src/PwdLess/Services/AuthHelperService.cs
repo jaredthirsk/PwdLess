@@ -17,6 +17,7 @@ namespace PwdLess.Services
         string GenerateAccessToken(User user, List<string> userContacts, Dictionary<string, object> claims = null);
         string GenerateNonce();
         string GenerateRefreshToken();
+        string GenerateUserId();
         long EpochNow { get; }
         long EpochNonceExpiry { get; }
         long EpochRefreshTokenExpiry { get; }
@@ -93,6 +94,10 @@ namespace PwdLess.Services
             return GenerateRandomString(Int32.Parse(_config["PwdLess:RefreshToken:Length"]));
         }
         
+        public string GenerateUserId()
+        {
+            return (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12)));
+        }
 
         private long ToEpochTime(DateTime dateTime)
         {
