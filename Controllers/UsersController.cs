@@ -16,7 +16,7 @@ using PwdLess.Filters;
 
 namespace PwdLess.Controllers
 {
-    [Route("[controller]")]
+    [Route("[controller]")] // TODO: make at /api or /auth/api
     public class UsersController : Controller /* TODO + THIS IS A REST API */
     {
         private AuthContext _context;

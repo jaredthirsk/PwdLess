@@ -106,9 +106,17 @@ namespace PwdLess.Controllers
         }
 
         [Authorize, SetUserId, HandleExceptions]
-        public async Task<IActionResult> RevokeRefreshToken(string userId)
+        public async Task<IActionResult> RevokeRefreshToken(string refreshToken, string userId)
         {
-            _authRepo.RemoveRefreshTokens(userId);
+            _authRepo.RemoveRefreshToken(userId, refreshToken);
+            await _authRepo.SaveDbChangesAsync();
+            return Ok();
+        }
+
+        [Authorize, SetUserId, HandleExceptions]
+        public async Task<IActionResult> RevokeAllRefreshTokens(string userId)
+        {
+            _authRepo.RemoveAllRefreshTokens(userId);
             await _authRepo.SaveDbChangesAsync();
             return Ok();
         }

@@ -107,7 +107,15 @@ namespace PwdLess.Services
             });
             return refreshToken;
         }
-        public void RemoveRefreshTokens(string userId)
+        public void RemoveRefreshToken(string userId, string refreshToken)
+        {
+            _context.UserRefreshTokens.Remove(new UserRefreshToken()
+            {
+                UserId = userId,
+                Content = refreshToken
+            });
+        }
+        public void RemoveAllRefreshTokens(string userId)
         {
             _context.UserRefreshTokens.RemoveRange(_context.UserRefreshTokens.Where(urf => urf.UserId == userId));
         }
