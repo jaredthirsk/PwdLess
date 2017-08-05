@@ -7,9 +7,6 @@ using System.Threading.Tasks;
 
 namespace PwdLess.Services
 {
-    /// <summary>
-    /// Converts a template in configuration to a complete string, given a token.
-    /// </summary>
     public interface ITemplateProcessor
     {
         string ProcessTemplate(string nonce, string template, string extraBodyData);

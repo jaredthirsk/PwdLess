@@ -10,9 +10,6 @@ using Microsoft.Extensions.Logging;
 
 namespace PwdLess.Services
 {
-    /// <summary>
-    /// Handles sending a message with a "body" to an "address".
-    /// </summary>
     public interface ISenderService
     {
         Task SendAsync(string contact, string nonce, string template);
