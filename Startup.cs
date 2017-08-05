@@ -19,8 +19,11 @@ namespace PwdLess
 {
     public class Startup
     {
+
         public Startup(IHostingEnvironment env)
         {
+            _env = env;
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -31,6 +34,7 @@ namespace PwdLess
         }
 
         public IConfigurationRoot Configuration { get; }
+        public IHostingEnvironment _env { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container
         public void ConfigureServices(IServiceCollection services)
@@ -43,8 +47,16 @@ namespace PwdLess
             services.AddSingleton(Configuration);
             services.AddScoped<IAuthHelperService, AuthHelperService>();
             services.AddScoped<AuthRepository>();
-            services.AddScoped<ISenderService, ConsoleTestingSenderService>(); // CAN REPLACE WITH SenderService
-            services.AddScoped<ITemplateProcessor, EmailTemplateProcessor>();
+
+            if (_env.IsDevelopment()) // send to console instead of actual if in development
+            {
+                services.AddScoped<ISenderService, ConsoleAsEmailTestingSenderService>();
+            } else
+            {
+                services.AddScoped<ISenderService, SenderService>();
+            }
+
+            services.AddScoped<ITemplateProcessor, SimpleTemplateProcessor>();
 
             // rate-limiting services
             services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));

@@ -12,10 +12,10 @@ namespace PwdLess.Services
         string ProcessTemplate(string nonce, string template, string extraBodyData);
     }
     
-    public class EmailTemplateProcessor : ITemplateProcessor
+    public class SimpleTemplateProcessor : ITemplateProcessor
     {
         private IConfigurationRoot _config;
-        public EmailTemplateProcessor(IConfigurationRoot config)
+        public SimpleTemplateProcessor(IConfigurationRoot config)
         {
             _config = config;
         }
@@ -23,8 +23,7 @@ namespace PwdLess.Services
         public string ProcessTemplate(string nonce, string template, string extraBodyData) // TODO: allow access to context to include personal User info in templates, ie. {{FavouriteColour}} 
         {
 
-            var body = _config[$"PwdLess:EmailContents:{template}:Body"]
-                .Replace("{{nonce}}", nonce);
+            var body = template.Replace("{{nonce}}", nonce);
 
             foreach (var kvPair in JsonConvert.DeserializeObject<Dictionary<string, string>>(extraBodyData))
                 body = body.Replace($"{{{{{kvPair.Key}}}}}", kvPair.Value);

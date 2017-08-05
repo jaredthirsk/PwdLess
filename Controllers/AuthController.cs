@@ -35,11 +35,11 @@ namespace PwdLess.Controllers
         public async Task<IActionResult> SendNonce(string contact, bool isAddingContact = false /*, string extraData = "email"*/)
         {
             if (_authRepo.DoesContactExist(contact)) // Returning user
-                await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.ReturningUser), "ReturningUser");
+                await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.ReturningUser), UserState.ReturningUser);
             else if (isAddingContact) // Returning user adding contact
-                await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.AddingContact), "AddingContact");
+                await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.AddingContact), UserState.AddingContact);
             else // New user
-                await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.NewUser), "NewUser");
+                await _senderService.SendAsync(contact, _authRepo.AddNonce(contact, UserState.NewUser), UserState.NewUser);
 
             await _authRepo.SaveDbChangesAsync();
             return Ok();   

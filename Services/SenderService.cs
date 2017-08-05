@@ -6,13 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-
+using PwdLess.Models;
 
 namespace PwdLess.Services
 {
     public interface ISenderService
     {
-        Task SendAsync(string contact, string nonce, string template);
+        Task SendAsync(string contact, string nonce, UserState userState);
     }
 
     enum ContactType
@@ -21,45 +21,30 @@ namespace PwdLess.Services
         PhoneNumber
     }
 
-    public class ConsoleTestingSenderService : ISenderService
+    public class ConsoleAsEmailTestingSenderService : ISenderService
     {
         private IConfigurationRoot _config;
         private ITemplateProcessor _templateProcessor;
         private ILogger _logger;
 
-        public ConsoleTestingSenderService(IConfigurationRoot config,
+        public ConsoleAsEmailTestingSenderService(IConfigurationRoot config,
             ITemplateProcessor templateProcessor,
-            ILogger<ConsoleTestingSenderService> logger)
+            ILogger<ConsoleAsEmailTestingSenderService> logger)
         {
             _config = config;
             _templateProcessor = templateProcessor;
             _logger = logger;
         }
 
-        public async Task SendAsync(string contact, string nonce, string template)
+        public async Task SendAsync(string contact, string nonce, UserState userState)
         {
-            switch (AssertTypeOf(contact))
-            {
-                case ContactType.Email:
-                    break;
-                case ContactType.PhoneNumber:
-                    break;
-                default:
-                    break;
-            }
-            
+            var templateName = nameof(userState) + "Email";
             _logger.LogDebug($@"To: {contact}, 
                                  From: {new MailboxAddress(_config["PwdLess:EmailAuth:From"])}, 
-                                 Subject: {_config[$"PwdLess:EmailContents:{template}:Subject"]}, 
-                                 Body: {_templateProcessor.ProcessTemplate(nonce, template, $"{{\"contact\":\"{contact}\"}}")}");
+                                 Subject: {_config[$"PwdLess:MessageTemplates:{templateName}:Subject"]}, 
+                                 Body: {_templateProcessor.ProcessTemplate(nonce, _config[$"PwdLess:MessageTemplates:{templateName}:Body"], $"{{\"contact\":\"{contact}\"}}")}");
 
             //return Task;
-        }
-
-        private ContactType AssertTypeOf(string contact)
-        {
-            //TODO implement this!
-            return ContactType.Email;
         }
     }
 
@@ -75,12 +60,12 @@ namespace PwdLess.Services
             _templateProcessor = templateProcessor;
         }
 
-        public async Task SendAsync(string contact, string nonce, string template)
+        public async Task SendAsync(string contact, string nonce, UserState userState)
         {
             switch (AssertTypeOf(contact))
             {
                 case ContactType.Email:
-                    await SendEmailAsync(contact, nonce, template);
+                    await SendEmailAsync(contact, nonce, nameof(userState) + "Email"); // Note how the template name is formed
                     break;
                 case ContactType.PhoneNumber:
                     break;
@@ -89,16 +74,16 @@ namespace PwdLess.Services
             }
         }
 
-        private async Task SendEmailAsync(string contact, string nonce, string template)
+        private async Task SendEmailAsync(string contact, string nonce, string templateName)
         {
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(_config["PwdLess:EmailAuth:From"]));
             message.To.Add(new MailboxAddress(contact));
-            message.Subject = _config[$"PwdLess:EmailContents:{template}:Subject"];
+            message.Subject = _config[$"PwdLess:MessageTemplates:{templateName}:Subject"];
 
-            message.Body = new TextPart(_config[$"PwdLess:EmailContents:{template}:BodyType"])
+            message.Body = new TextPart(_config[$"PwdLess:MessageTemplates:{templateName}:BodyType"])
             {
-                Text = _templateProcessor.ProcessTemplate(nonce, template, $"{{\"contact\":{contact}}}")
+                Text = _templateProcessor.ProcessTemplate(nonce, _config[$"PwdLess:MessageTemplates:{templateName}:Body"], $"{{\"contact\":{contact}}}")
             };
 
             using (var client = new SmtpClient())
