@@ -36,7 +36,7 @@ namespace PwdLess.Services
         {
             get
             {
-                return ToEpochTime(DateTime.Now);
+                return ToEpochTime(DateTime.UtcNow);
             }
         }
 
@@ -44,7 +44,7 @@ namespace PwdLess.Services
         {
             get
             {
-                return ToEpochTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:Nonce:Expiry"])));
+                return ToEpochTime(DateTime.UtcNow.AddSeconds(Int32.Parse(_config["PwdLess:Nonce:Expiry"])));
             }
         }
 
@@ -52,7 +52,7 @@ namespace PwdLess.Services
         {
             get
             {
-                return ToEpochTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:RefreshToken:Expiry"])));
+                return ToEpochTime(DateTime.UtcNow.AddSeconds(Int32.Parse(_config["PwdLess:RefreshToken:Expiry"])));
             }
         }
 
@@ -63,11 +63,9 @@ namespace PwdLess.Services
                 { "sub", user.UserId },
                 { "iss", _config["PwdLess:AccessToken:Issuer"]},
                 { "iat", EpochNow },
-                { "exp", ToEpochTime(DateTime.Now.AddSeconds(Int32.Parse(_config["PwdLess:AccessToken:Expiry"]))) },
+                { "exp", ToEpochTime(DateTime.UtcNow.AddSeconds(Int32.Parse(_config["PwdLess:AccessToken:Expiry"]))) },
                 { "aud", _config["PwdLess:AccessToken:Audience"] },
-                { "userInfo", JsonConvert.SerializeObject(new {
-                    user.FavouriteColour
-                }) },
+                { "userInfo", JsonConvert.SerializeObject(user, new JsonSerializerSettings() { MaxDepth = 2 }) },
                 { "userContacts",  userContacts }
             };
 

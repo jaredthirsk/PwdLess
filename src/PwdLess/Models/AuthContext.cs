@@ -12,6 +12,7 @@ namespace PwdLess.Models
         public AuthContext(DbContextOptions<AuthContext> options) :  base(options){ }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
         public DbSet<UserContact> UserContacts { get; set; }
         public DbSet<Nonce> Nonces { get; set; }
 

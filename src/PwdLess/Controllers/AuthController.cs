@@ -51,27 +51,24 @@ namespace PwdLess.Controllers
         [HandleExceptions]
         public async Task<IActionResult> NonceToRefreshToken(string nonce, User user = null)
         {
-            _authRepo.ValidateNonce(nonce);
-
             string userId;
-            string contact = _authRepo.ContactOfNonce(nonce);
+            string contact = _authRepo.GetContactOfNonce(nonce);
 
-            if (_authRepo.GetNonceUserState(nonce) == UserState.NewUser)
+            if (_authRepo.GetNonceUserState(nonce) == UserState.NewUser && !_authRepo.DoesContactExist(contact))
             {
-                if (!ModelState.IsValid) return BadRequest("You need to supply all additional user infomation.");
+                if (!ModelState.IsValid)
+                    return BadRequest("You need to supply all additional user infomation.");
 
-                user.UserId = userId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12))); /* ?? user.UserId */ // Users can't choose their own UserId, or TODO: they can but it can't be "admin" // TODO: make more elegant
-
-                _authRepo.AddUser(user);
+                userId = _authRepo.AddUser(user);
                 _authRepo.AddUserContact(userId, contact);
                 await _authRepo.SaveDbChangesAsync();
             }
             else {
-                userId = _authRepo.UserIdOfContact(contact);
+                userId = _authRepo.GetUserIdOfContact(contact);
             }
             
-            var refreshToken =  _authRepo.AddRefreshToken(userId);
-            _authRepo.DeleteNonce(contact);
+            string refreshToken = _authRepo.AddRefreshToken(userId);
+            _authRepo.RemoveNonce(contact);
 
             await _authRepo.SaveDbChangesAsync();
             return Ok(refreshToken);
@@ -80,10 +77,12 @@ namespace PwdLess.Controllers
         [Authorize, SetUserId, HandleExceptions]
         public async Task<IActionResult> NonceToAddContact(string nonce, string userId)
         {
-            _authRepo.ValidateNonce(nonce);
-            string contact = _authRepo.ContactOfNonce(nonce);
+            if (_authRepo.GetNonceUserState(nonce) != UserState.AddingContact)
+                return BadRequest("Sorry, this nonce is not intended for that use.");
+
+            string contact = _authRepo.GetContactOfNonce(nonce);
             _authRepo.AddUserContact(userId, contact);
-            _authRepo.DeleteNonce(contact);
+            _authRepo.RemoveNonce(contact);
 
             await _authRepo.SaveDbChangesAsync();
             return Ok();
@@ -92,7 +91,7 @@ namespace PwdLess.Controllers
         [Authorize, SetUserId, HandleExceptions]
         public async Task<IActionResult> RemoveContact(string contact, string userId)
         {
-            if (_authRepo.IsLastUserContact(userId)) return BadRequest($"Sorry! Can't Remove last contact.");
+            if (!_authRepo.IsContactRemovable(userId, contact)) return BadRequest($"Sorry! Can't remove this contact.");
 
             _authRepo.RemoveUserContact(contact, userId);
 
@@ -104,7 +103,6 @@ namespace PwdLess.Controllers
         [HandleExceptions]
         public IActionResult RefreshTokenToAccessToken(string refreshToken)
         {
-            _authRepo.ValidateRefreshToken(refreshToken);
             string accessToken = _authRepo.RefreshTokenToAccessToken(refreshToken);
             
             return Ok(accessToken);
@@ -113,7 +111,7 @@ namespace PwdLess.Controllers
         [Authorize, SetUserId, HandleExceptions]
         public async Task<IActionResult> RevokeRefreshToken(string userId)
         {
-            _authRepo.RevokeRefreshToken(userId);
+            _authRepo.RemoveRefreshTokens(userId);
             await _authRepo.SaveDbChangesAsync();
             return Ok();
         }

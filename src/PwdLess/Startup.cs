@@ -13,6 +13,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using AspNetCoreRateLimit;
 using PwdLess.Models;
+using System.Security.Claims;
 
 namespace PwdLess
 {
@@ -51,6 +52,16 @@ namespace PwdLess
             services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
             services.AddSingleton<IIpPolicyStore, DistributedCacheIpPolicyStore>();
             services.AddSingleton<IRateLimitCounterStore, DistributedCacheRateLimitCounterStore>();
+
+            // auth services
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("admin",
+                  policy =>
+                  {
+                      policy.RequireClaim(ClaimTypes.NameIdentifier, "admin");
+                  });
+            });
 
             // framework services
             services.AddMvc();

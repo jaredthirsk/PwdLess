@@ -28,16 +28,36 @@ namespace PwdLess.Services
         {
             return _context.UserContacts.Any(uc => uc.Contact == contact);
         }
-         
-        public string UserIdOfContact(string contact)
+        public bool IsContactRemovable(string userId, string contact)
+        {
+            return _context.UserContacts.Count(uc => uc.UserId == userId) > 1 // not last contact
+                && _context.UserContacts.Any(uc => uc.Contact == contact && uc.UserId == userId); // contact actually exists
+        }
+        public string GetUserIdOfContact(string contact)
         {
             return _context.UserContacts.FirstOrDefault(uc => uc.Contact == contact).UserId;
         }
+        public string GetContactOfNonce(string nonce) // yes, also validates nonce
+        {
+            // Remove all expired nonces?
+            //_context.RemoveRange(_context.Nonces.Where(n => n.Expiry < _authHelper.EpochNow));
 
+            Nonce nonceObj = _context.Nonces.FirstOrDefault(n => n.Content == nonce
+                                                              && n.Expiry > _authHelper.EpochNow);
+
+            if (nonceObj == null)
+                throw new Exception(); // TODO make better
+
+            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).Contact;
+        }
+        public UserState GetNonceUserState(string nonce)
+        {
+            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).UserState;
+        }
 
         public string AddNonce(string contact, UserState userState)
         {
-            DeleteNonce(contact);
+            RemoveNonce(contact);
             string nonce = _authHelper.GenerateNonce();
             _context.Nonces.Add(new Nonce
             {
@@ -49,10 +69,17 @@ namespace PwdLess.Services
 
             return nonce;
         }
-
-        public void AddUser(User user)
+        public void RemoveNonce(string contact)
         {
+            _context.Nonces.RemoveRange(_context.Nonces.Where(n => n.Contact == contact));
+        }
+
+        public string AddUser(User user)
+        {
+            user.DateCreated = _authHelper.EpochNow;
+            user.UserId = (string.Concat(Guid.NewGuid().ToString().Replace("-", "").Take(12))); // TODO: move to AuthHelperService
             _context.Users.Add(user);
+            return user.UserId;
         }
 
         public void AddUserContact(string userId, string contact)
@@ -63,85 +90,41 @@ namespace PwdLess.Services
                 UserId = userId
             });
         }
-        
-        public string AddRefreshToken(string userId)
-        {
-            var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            user.RefreshToken = _authHelper.GenerateRefreshToken();
-            user.RefreshTokenExpiry = _authHelper.EpochRefreshTokenExpiry;
-            return user.RefreshToken;
-        }
-
-
-        public void ValidateNonce(string nonce)
-        {
-            // PurgeExpiredNonces(); // optional, can guarantee will run regularly // Nope, won't use to maintain log
-            Nonce nonceObj = _context.Nonces.OrderBy(n => n.Expiry)
-                                            .FirstOrDefault(n => n.Content == nonce);
-
-            if (nonceObj == null)
-                throw new IndexOutOfRangeException();
-
-            if (nonceObj.Expiry < _authHelper.EpochNow)
-                throw new Exception(nonceObj.Expiry.ToString() + "     " + _authHelper.EpochNow.ToString()); // TODO make better
-        }
-
-        public void ValidateRefreshToken(string refreshToken)
-        {
-            User userObj = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
-
-            if (userObj == null || userObj.RefreshToken == "")
-                throw new IndexOutOfRangeException();
-
-            if (userObj.RefreshTokenExpiry < _authHelper.EpochNow)
-                throw new Exception(new DateTime(userObj.RefreshTokenExpiry).ToString()); // TODO make better
-
-        }
-
-
-        public string ContactOfNonce(string nonce)
-        {
-            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).Contact;
-        }
-
-        public UserState GetNonceUserState(string nonce)
-        {
-            return _context.Nonces.FirstOrDefault(n => n.Content == nonce).UserState;
-        }
-
-        public void DeleteNonce(string contact)
-        {
-            _context.Nonces.RemoveRange(_context.Nonces.Where(n => n.Contact == contact));
-        }
-
-
-
-
-
-        public string RefreshTokenToAccessToken(string refreshToken)
-        {
-            var user = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
-            return _authHelper.GenerateAccessToken(user, _context.UserContacts.Where(uc => uc.UserId == user.UserId).Select(uc => uc.Contact).ToList());
-        }
-
-        public void RevokeRefreshToken(string userId)
-        {
-            _context.Users.FirstOrDefault(u => u.UserId == userId).RefreshToken = "";
-        }
-
-
-
         public void RemoveUserContact(string contact, string userId)
         {
             _context.UserContacts.Remove(new UserContact() { Contact = contact, UserId = userId });
         }
 
-        public bool IsLastUserContact(string userId)
+        public string AddRefreshToken(string userId)
         {
-            return  _context.UserContacts.Count(uc => uc.UserId == userId) <= 1;
+            var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
+            string refreshToken = _authHelper.GenerateRefreshToken();
+            _context.UserRefreshTokens.Add(new UserRefreshToken()
+            {
+                UserId = userId,
+                Content = refreshToken,
+                Expiry = _authHelper.EpochRefreshTokenExpiry,
+            });
+            return refreshToken;
+        }
+        public void RemoveRefreshTokens(string userId)
+        {
+            _context.UserRefreshTokens.RemoveRange(_context.UserRefreshTokens.Where(urf => urf.UserId == userId));
         }
 
+        public string RefreshTokenToAccessToken(string refreshToken) // yes, also validates refresh token
+        {
+            // Remove all expired refresh tokens?
+            //_context.RemoveRange(_context.UserRefreshTokens.Where(urf => urf.Expiry < _authHelper.EpochNow));
 
+            User userObj = _context.Users.FirstOrDefault(u => u.UserRefreshTokens.Any(urf => urf.Content == refreshToken 
+                                                                                          && urf.Expiry > _authHelper.EpochNow));
+
+            if (userObj == null || refreshToken == "")
+                throw new Exception(); // TODO make better
+            
+            return _authHelper.GenerateAccessToken(userObj, _context.UserContacts.Where(uc => uc.UserId == userObj.UserId).Select(uc => uc.Contact).ToList());
+        }
 
         public async Task SaveDbChangesAsync()
         {

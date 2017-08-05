@@ -1,24 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace PwdLess.Models
 {
-    public class User // Only model used for model binding
+    // This is the only model used for model binding. Contains custom user properties.
+    public class User : BaseUser
     {
-        [BindNever]
-        public string UserId { get; set; }
+        [Required, MinLength(3), MaxLength(15)]
+        public string DisplayName { get; set; }
 
-        [BindNever]
-        public string RefreshToken { get; set; }
-        [BindNever]
-        public long RefreshTokenExpiry { get; set; }
-
-        [BindNever]
-        public ICollection<UserContact> UserContacts { get; set; }
-
-        [BindRequired]
+        [Required]
         public string FavouriteColour { get; set; }
-
     }
 }

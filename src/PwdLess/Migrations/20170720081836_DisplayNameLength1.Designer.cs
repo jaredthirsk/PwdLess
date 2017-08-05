@@ -8,9 +8,10 @@ using PwdLess.Models;
 namespace PwdLess.Migrations
 {
     [DbContext(typeof(AuthContext))]
-    partial class AuthContextModelSnapshot : ModelSnapshot
+    [Migration("20170720081836_DisplayNameLength1")]
+    partial class DisplayNameLength1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.2")
@@ -42,8 +43,11 @@ namespace PwdLess.Migrations
                         .IsRequired()
                         .HasMaxLength(15);
 
-                    b.Property<string>("FavouriteColour")
-                        .IsRequired();
+                    b.Property<string>("FavouriteColour");
+
+                    b.Property<string>("RefreshToken");
+
+                    b.Property<long>("RefreshTokenExpiry");
 
                     b.HasKey("UserId");
 
@@ -64,33 +68,10 @@ namespace PwdLess.Migrations
                     b.ToTable("UserContacts");
                 });
 
-            modelBuilder.Entity("PwdLess.Models.UserRefreshToken", b =>
-                {
-                    b.Property<string>("Content")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<long>("Expiry");
-
-                    b.Property<string>("UserId");
-
-                    b.HasKey("Content");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserRefreshTokens");
-                });
-
             modelBuilder.Entity("PwdLess.Models.UserContact", b =>
                 {
                     b.HasOne("PwdLess.Models.User", "User")
                         .WithMany("UserContacts")
-                        .HasForeignKey("UserId");
-                });
-
-            modelBuilder.Entity("PwdLess.Models.UserRefreshToken", b =>
-                {
-                    b.HasOne("PwdLess.Models.User", "User")
-                        .WithMany("UserRefreshTokens")
                         .HasForeignKey("UserId");
                 });
         }
