@@ -63,8 +63,11 @@ namespace PwdLess.Controllers
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 if (user == null)
                 {
-                    var result = await _userManager.CreateAsync(new ApplicationUser { TwoFactorEnabled = true, UserName = model.Email, Email = model.Email });
-                    user = await _userManager.FindByEmailAsync(model.Email);
+                    var result = await _userManager.CreateAsync(new ApplicationUser { UserName = model.Email, Email = model.Email });
+                    if (result.Succeeded)
+                        user = await _userManager.FindByEmailAsync(model.Email);
+                    else
+                        return View(model);
                 }
 
                 var token = await _userManager.GenerateUserTokenAsync(user, "Email", "TokenLogin");
@@ -100,7 +103,7 @@ namespace PwdLess.Controllers
             var result = await _userManager.VerifyUserTokenAsync(user, "Email", "TokenLogin", model.Token);
 
             if (result)
-                await _signInManager.SignInAsync(user, isPersistent: model.RememberMe);
+                await _signInManager.SignInAsync(user, isPersistent: model.RememberMe); 
             else
                 return View("Error", new ErrorViewModel() { Error = "Problem validating token." });
 
@@ -350,7 +353,23 @@ namespace PwdLess.Controllers
                 ViewData["ReturnUrl"] = returnUrl;
                 ViewData["LoginProvider"] = info.LoginProvider;
                 var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-                return View("ExternalLogin", new ExternalLoginViewModel { Email = email });
+                return View("ExternalLogin", new ExternalLoginViewModel { UserName = email });
+
+                //// If the user does not have an account, then create thier account
+                //var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+                //var user = new ApplicationUser { UserName = email, Email = email };
+                //var model = new ExternalLoginViewModel { Username = email };
+                //var result2 = await _userManager.CreateAsync(user);
+                //if (result2.Succeeded)
+                //{
+                //    // allow them to customize their account
+                //    ViewData["ReturnUrl"] = returnUrl;
+                //    ViewData["LoginProvider"] = info.LoginProvider;
+                //    return View(nameof(ExternalLogin), model);
+                //}
+                //AddErrors(result2);
+                //ViewData["ReturnUrl"] = returnUrl;
+                //return View(nameof(ExternalLogin), model);
             }
         }
 
@@ -367,15 +386,19 @@ namespace PwdLess.Controllers
                 {
                     throw new ApplicationException("Error loading external login information during confirmation.");
                 }
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                var user = new ApplicationUser { UserName = model.UserName, Email = info.Principal.FindFirstValue(ClaimTypes.Email) };
                 var result = await _userManager.CreateAsync(user);
+
+                //var user = new ApplicationUser { UserName = model.Username, Email = info.Principal.FindFirstValue(ClaimTypes.Email) };
+                //var result = await _userManager.UpdateAsync(user);
+
                 if (result.Succeeded)
                 {
                     result = await _userManager.AddLoginAsync(user, info);
                     if (result.Succeeded)
                     {
                         await _signInManager.SignInAsync(user, isPersistent: false);
-                        _logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
+                        _logger.LogInformation("User updated an account using {Name} provider.", info.LoginProvider);
                         return RedirectToLocal(returnUrl);
                     }
                 }

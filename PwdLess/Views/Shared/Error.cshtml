@@ -13,17 +13,18 @@
     </p>
 }
 
-
-<div class="jumbotron">
-    <h2>We ran into a problem!</h2>
-    <p class="lead text-left">
-        @if (!string.IsNullOrEmpty(Model.Error))
-        {
-            <strong>@Model.Error</strong>
-        }
-        @if (!string.IsNullOrEmpty(Model.ErrorDescription))
-        {
-            <small>@Model.ErrorDescription</small>
-        }
-    </p>
-</div>
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="jumbotron">
+        <p class="lead text-left">
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <strong>@Model.Error</strong>
+            }
+            @if (!string.IsNullOrEmpty(Model.ErrorDescription))
+            {
+                <small>@Model.ErrorDescription</small>
+            }
+        </p>
+    </div>
+}

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using PwdLess.Controllers;
+using PwdLess.Models.AccountViewModels;
 
 namespace Microsoft.AspNetCore.Mvc
 {
@@ -13,7 +14,7 @@ namespace Microsoft.AspNetCore.Mvc
             return urlHelper.Action(
                 action: nameof(AccountController.TokenLogin),
                 controller: "Account",
-                values: new CodeLoginViewModel() { Email = userId, Code = token, RememberMe = rememberMe, ReturnUrl = returnUrl },
+                values: new TokenLoginViewModel() { Email = userId, Token = token, RememberMe = rememberMe, ReturnUrl = returnUrl },
                 protocol: scheme);
         }
 

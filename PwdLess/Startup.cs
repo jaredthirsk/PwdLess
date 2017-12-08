@@ -51,8 +51,8 @@ namespace PwdLess
 
             services.AddAuthentication().AddGoogle(googleOptions =>
             {
-                googleOptions.ClientId = "434483408261-55tc8n0cs4ff1fe21ea8df2o443v2iuc.apps.googleusercontent.com";
-                googleOptions.ClientSecret = "3gcoTrEDPPJ0ukn_aYYT6PWo";
+                googleOptions.ClientId = "1051315180916-6o8op8oebv3r5iq6avk22u17vqhhikbs.apps.googleusercontent.com";
+                googleOptions.ClientSecret = "_g14axZJ-ndWc_CZ3foLQKq7";
             });
 
             services.Configure<IdentityOptions>(options =>
