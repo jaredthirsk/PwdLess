@@ -8,11 +8,11 @@ using Microsoft.EntityFrameworkCore.Storage.Internal;
 using PwdLess.Data;
 using System;
 
-namespace PwdLess.Data.Migrations
+namespace PwdLess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20171207121334_Init")]
-    partial class Init
+    [Migration("20171208225747_First")]
+    partial class First
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

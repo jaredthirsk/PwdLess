@@ -11,12 +11,17 @@ namespace PwdLess.Models.AccountViewModels
         [Required]
         [EmailAddress]
         public string Email { get; set; }
-
-        [Display(Name = "Remember me?")]
+        
         public bool RememberMe { get; set; }
 
         public string ReturnUrl { get; set; }
 
+        [Display(Name = "Code")]
         public string Token { get; set; }
+
+        public string Purpose { get; set; }
+
+        [Display(Name = "Make this my primary email")]
+        public bool MakePrimary { get; set; }
     }
 }

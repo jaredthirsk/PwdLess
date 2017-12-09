@@ -1,0 +1,55 @@
+﻿@model MessageViewModel
+@{
+    ViewData["Title"] = "Hey!";
+}
+
+<div class="row">
+    <div class="column">
+        @if (Model.MessageType == "Error")
+        {
+            <h3 class="text-danger">Something went wrong!</h3>
+        } else if (Model.MessageType == "Warning")
+        {
+            <h3 class="text-warning">Ooops!</h3>
+        } else if (Model.MessageType == "Success")
+        {
+            <h3 class="text-success">Success!</h3>
+        }
+    </div>
+</div>
+
+
+@if (Model.ShowRequestId)
+{
+    <div class="row">
+        <div class="column">
+            <p>
+                <strong>Request ID:</strong> <code>@Model.RequestId</code>
+            </p>
+        </div>
+    </div>
+
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="row">
+        <div class="column">
+            @if (!string.IsNullOrEmpty(Model.Message))
+            {
+                <h4>@Model.Message</h4>
+            }
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <h5>@Model.Description</h5>
+            }
+        </div>
+    </div>
+}
+
+<div class="row">
+    <div class="column">
+        <button onclick="window.history.back();" class="button">Back</button>
+        <a asp-area="" asp-controller="Home" asp-action="Index" class="button">Home</a>
+    </div>
+</div>

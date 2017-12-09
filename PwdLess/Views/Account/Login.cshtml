@@ -9,66 +9,76 @@
     ViewData["Title"] = "Log in";
 }
 
-<h2>@ViewData["Title"]</h2>
+@if (SignInManager.IsSignedIn(User))
+{
+    <div class="row">
+        <h3 class="column">
+            Add another login method
+        </h3>
+    </div>
+}
+else
+{
+    <div class="row">
+        <h3 class="column">
+            Login or signup
+        </h3>
+    </div>
+
+}
+
 <div class="row">
-    <div class="col-md-4">
-        <section>
-            <form asp-route-returnurl="@ViewData["ReturnUrl"]" method="post">
-                <h4>Use a local account to log in.</h4>
-                <hr />
-                <div asp-validation-summary="All" class="text-danger"></div>
-                <div class="form-group">
-                    <label asp-for="Email"></label>
-                    <input asp-for="Email" class="form-control" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <div class="checkbox">
-                        <label asp-for="RememberMe">
-                            <input asp-for="RememberMe" />
-                            @Html.DisplayNameFor(m => m.RememberMe)
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-default">Log in</button>
-                </div>
-            </form>
-        </section>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h4>Use another service to log in.</h4>
-            <hr />
-            @{
-                var loginProviders = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-                if (loginProviders.Count == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a>
-                            for details on setting up this ASP.NET application to support logging in via external services.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form asp-action="ExternalLogin" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in loginProviders)
-                                {
-                                    <button type="submit" class="btn btn-default" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.Name</button>
-                                }
-                            </p>
-                        </div>
-                    </form>
-                }
+    <form asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <label asp-for="Email"></label>
+        <input asp-for="Email" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+
+        @if (!SignInManager.IsSignedIn(User))
+        {
+            <div class="float-right">
+                <input asp-for="RememberMe" />
+                <label asp-for="RememberMe" class="label-inline">@Html.DisplayNameFor(m => m.RememberMe)</label>
+            </div>
+        }
+
+        <button type="submit" class="button-primary">
+            @if (SignInManager.IsSignedIn(User))
+            {
+                <span>Add email</span>
+            } else
+            {
+                <span>Login or signup</span>
             }
-        </section>
-    </div>
+        </button>
+    </form>
 </div>
 
-@section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+
+@{
+    var loginProviders = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+    if (loginProviders.Count == 0)
+    {
+    }
+    else
+    {
+        <hr />
+        <h4>Or an external login...</h4>
+
+        <div class="row">
+            <form asp-action="ExternalLogin" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
+                <div>
+                    <p>
+                        @foreach (var provider in loginProviders)
+                        {
+                            <button type="submit" class="btn btn-default" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.Name</button>
+                        }
+                    </p>
+                </div>
+            </form>
+        </div>
+
+    }
 }

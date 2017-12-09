@@ -66,10 +66,11 @@ namespace PwdLess.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return View("Error", new ErrorViewModel()
+                return View("Message", new MessageViewModel()
                 {
-                    Error = OpenIdConnectConstants.Errors.ServerError,
-                    ErrorDescription = "An internal error has occurred"
+                    MessageType = "Error",
+                    Message = OpenIdConnectConstants.Errors.ServerError,
+                    Description = "An internal error has occurred"
                 });
             }
 

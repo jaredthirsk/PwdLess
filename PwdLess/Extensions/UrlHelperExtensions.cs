@@ -9,12 +9,12 @@ namespace Microsoft.AspNetCore.Mvc
 {
     public static class UrlHelperExtensions
     {
-        public static string EmailConfirmationLink(this IUrlHelper urlHelper, string userId, string token, bool rememberMe, string returnUrl, string scheme)
+        public static string EmailConfirmationLink(this IUrlHelper urlHelper, string scheme, TokenLoginViewModel tokenModel)
         {
             return urlHelper.Action(
                 action: nameof(AccountController.TokenLogin),
                 controller: "Account",
-                values: new TokenLoginViewModel() { Email = userId, Token = token, RememberMe = rememberMe, ReturnUrl = returnUrl },
+                values: tokenModel,
                 protocol: scheme);
         }
 

@@ -4,36 +4,59 @@
 
 @model TokenLoginViewModel
 
-<h2>@ViewData["Title"]</h2>
-<p>
-    Code sent to email.
-    Please check your email now!
-</p>
+<div class="row">
+    <div class="column">
+        <h3 class="text-success">@ViewData["Title"]</h3>
+        <div>
+            Please check <em>@Model.Email.ToLower()</em> now!
 
-<form asp-controller="Account" asp-action="TokenLogin" method="get" class="form-horizontal" role="form">
-
-    <div asp-validation-summary="All" class="text-danger"></div>
-
-    <input asp-for="Email" type="hidden" value="@Model.Email" />
-    <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />
-    <input asp-for="ReturnUrl" type="hidden" value="@Model.ReturnUrl" />
-
-
-    <div class="form-group">
-        <label asp-for="Token" class="col-md-2 control-label"></label>
-        <div class="col-md-10">
-            <input asp-for="Token" class="form-control" />
+            @if (Model.Purpose == "AddEmail")
+            {
+                <div>Enter the code sent to be able to use this email to access your account.</div>
+            }
+            else if (Model.Purpose == "Register")
+            {
+                <div>Enter the code sent to signup with your email.</div>
+            }
+            else if (Model.Purpose == "Login")
+            {
+                <div>Enter the code sent to login with your email.</div>
+            }
+            else
+            {
+                <div class="text-danger">Somehting has gone wrong.</div>
+            }
         </div>
     </div>
+</div>
 
-    <div class="form-group">
-        <div class="col-md-offset-2 col-md-10">
-            <button type="submit" class="btn btn-default">Check Code</button>
+
+<div class="row">
+    <form asp-controller="Account" asp-action="TokenLogin" method="get" role="form" class="column">
+
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <input asp-for="Email" type="hidden" value="@Model.Email" />
+        <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />
+        <input asp-for="ReturnUrl" type="hidden" value="@Model.ReturnUrl" />
+        <input asp-for="Purpose" type="hidden" value="@Model.Purpose" />
+
+
+        <label asp-for="Token"></label>
+        <input asp-for="Token"/>
+
+
+        @if (Model.Purpose == "AddEmail")
+        {
+        <div class="float-right">
+            <input asp-for="MakePrimary" class="form-control" />
+            <label asp-for="MakePrimary" class="label-inline"></label>
         </div>
-    </div>
+        }
 
-</form>
 
-@section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
-}
+        <button type="submit" class="button-primary">Check Code</button>
+
+    </form>
+
+</div>

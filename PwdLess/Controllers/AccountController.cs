@@ -59,30 +59,58 @@ namespace PwdLess.Controllers
             ViewData["ReturnUrl"] = returnUrl;
             if (ModelState.IsValid)
             {
+                var email = _userManager.NormalizeKey(model.Email);
+                var user = new ApplicationUser();
+                var purpose = "";
 
-                var user = await _userManager.FindByEmailAsync(model.Email);
-                if (user == null)
+                if (_signInManager.IsSignedIn(User))
                 {
-                    var result = await _userManager.CreateAsync(new ApplicationUser { UserName = model.Email, Email = model.Email });
-                    if (result.Succeeded)
-                        user = await _userManager.FindByEmailAsync(model.Email);
+                    user = await _userManager.FindByLoginAsync("Email", email);
+                    if (user == null)
+                    {
+                        user = await _userManager.GetUserAsync(User);
+                        purpose = "AddEmail";
+                    } else
+                    {
+                        return View("Message", new MessageViewModel() { MessageType = "Warning", Message = "This email is already added to your account." });
+                    }
+                }
+                else
+                {
+                    user = await _userManager.FindByLoginAsync("Email", email);
+                    if (user == null)
+                    {
+                        user = await _userManager.FindByEmailAsync(email);
+                        if (user == null)
+                        {
+                            user = new ApplicationUser() { Id = email, UserName = email, Email = email };
+                            await _userManager.CreateAsync(user);
+                        } // else someone tried to register with this email but didn't
+                        // Note: users with a User but no "Email" in UserLogins are unverified, trying to register. May need to delete from database after token expires somehow? Maybe add ApplicationUser.IsTemporary?
+                        purpose = "Register";
+                    }
                     else
-                        return View(model);
+                    {
+                        purpose = "Login";
+                    }
                 }
 
-                var token = await _userManager.GenerateUserTokenAsync(user, "Email", "TokenLogin");
+                _logger.LogDebug($"USER: {user.Id} ATTEMPTING PURPOSE: {purpose} WITH EMAIL: {email}");
 
-                var callbackUrl = Url.EmailConfirmationLink(model.Email, token, model.RememberMe, returnUrl, Request.Scheme);
+                var token = await _userManager.GenerateUserTokenAsync(user, "Email", purpose);
 
-                await _emailSender.SendEmailConfirmationAsync(model.Email, callbackUrl, token);
+                var callbackUrl = Url.EmailConfirmationLink(Request.Scheme, new TokenLoginViewModel { Token = token, Email = email, RememberMe = model.RememberMe, ReturnUrl = returnUrl, Purpose = purpose, MakePrimary = true });
 
-                return RedirectToAction(nameof(TokenLoginManual), new { model.Email, model.RememberMe, ReturnUrl = returnUrl });
+                await _emailSender.SendEmailConfirmationAsync(email, callbackUrl, token);
+
+                return RedirectToAction(nameof(TokenLoginManual), new TokenLoginViewModel { Email = email, RememberMe = model.RememberMe, ReturnUrl = returnUrl, Purpose = purpose, MakePrimary = true });
+
             }
-            else
-            {
-                return View(model);
-            }
+
+            // If we got this far, something failed, redisplay form
+            return View(model);
         }
+
 
         [HttpGet]
         [AllowAnonymous]
@@ -96,209 +124,83 @@ namespace PwdLess.Controllers
         public async Task<IActionResult> TokenLogin(TokenLoginViewModel model)
         {
             if (model.Token == null)
-                return View("Error", new ErrorViewModel() { Error = "No token supplied.", ErrorDescription = "A token must be supplied to login." });
+                return View("Message", new MessageViewModel() { MessageType = "Error", Message = "No code supplied." });
+            if (model.Purpose != "Register" && model.Purpose != "Login" && model.Purpose != "AddEmail")
+                return View("Message", new MessageViewModel() { MessageType = "Error", Message = "Unknown purpose." });
 
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var email = _userManager.NormalizeKey(model.Email);
+            var user = await _userManager.FindByLoginAsync("Email", email);
 
-            var result = await _userManager.VerifyUserTokenAsync(user, "Email", "TokenLogin", model.Token);
+            if (user == null)
+            {
+                if (model.Purpose == "Register")
+                    user = await _userManager.FindByEmailAsync(email);
+                else if (model.Purpose == "AddEmail")
+                    user = await _userManager.GetUserAsync(User);
+                else
+                    return View("Message", new MessageViewModel() { MessageType = "Error", Message = "An unexpected error occured." });
+            }
+
+            var result = await _userManager.VerifyUserTokenAsync(user, "Email", model.Purpose, model.Token);
 
             if (result)
-                await _signInManager.SignInAsync(user, isPersistent: model.RememberMe); 
-            else
-                return View("Error", new ErrorViewModel() { Error = "Problem validating token." });
+            {
+                if (model.Purpose == "Login" || model.Purpose == "Register")
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: model.RememberMe);
+                }
+                if (model.Purpose == "AddEmail" || model.Purpose == "Register")
+                {
+                    var addAddResult = await _userManager.AddLoginAsync(user, new UserLoginInfo("Email", email, "Email"));
+                    if (addAddResult.Succeeded)
+                    {
+                        _logger.LogDebug($"SUCCESS, JUST ADDED NEW EMAIL: [{email}] TO USER: [{user.Id}]");
+                    }
+                    else
+                    {
+                        return View("Message", new MessageViewModel() { MessageType = "Error", Message = "Failed to add new email." });
+                    }
+                }
+                if (model.Purpose == "AddEmail")
+                {
+                    if (model.MakePrimary)
+                    {
+                        var primaryResult = await _userManager.SetEmailAsync(user, email);
+                        if (primaryResult.Succeeded)
+                        {
+                            _logger.LogDebug($"SUCCESS, JUST MADE EMAIL: [{email}] PRIMARY FOR USER: [{user.Id}]");
+                        } else
+                        {
+                            return View("Message", new MessageViewModel() { MessageType = "Error", Message = "Failed to set primary email." });
+                        }
+                    }
+                }
 
+            } else
+            {
+                return View("Message", new MessageViewModel() { MessageType = "Error", Message = "Problem validating code." });
+            }
+
+            // Success
+            Console.WriteLine("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" + model.ReturnUrl);
+            _logger.LogDebug("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG"+model.ReturnUrl);
+
+            if (model.ReturnUrl == "" || model.ReturnUrl == null)
+            {
+                email = email.ToLower();
+                var message = "";
+
+                if (model.Purpose == "Register")
+                    message = $"You have been successfully registered with the email {email}.";
+                else if (model.Purpose == "Login")
+                    message = $"You have successfully logged-in with the email {email}.";
+                else if (model.Purpose == "AddEmail")
+                    message = $"The email {email} has been successfully added to your account. {(model.MakePrimary ? "It has been made the primary email." : "")}";
+
+                return View("Message", new MessageViewModel() { MessageType = "Success", Message = message });
+            }
+            
             return RedirectToLocal(model.ReturnUrl);
-        }
-
-        //[HttpPost]
-        //[AllowAnonymous]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
-        //{
-        //    ViewData["ReturnUrl"] = returnUrl;
-        //    if (ModelState.IsValid)
-        //    {
-        //        // This doesn't count login failures towards account lockout
-        //        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        //        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
-        //        if (result.Succeeded)
-        //        {
-        //            _logger.LogInformation("User logged in.");
-        //            return RedirectToLocal(returnUrl);
-        //        }
-        //        if (result.RequiresTwoFactor)
-        //        {
-        //            return RedirectToAction(nameof(LoginWith2fa), new { returnUrl, model.RememberMe });
-        //        }
-        //        if (result.IsLockedOut)
-        //        {
-        //            _logger.LogWarning("User account locked out.");
-        //            return RedirectToAction(nameof(Lockout));
-        //        }
-        //        else
-        //        {
-        //            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-        //            return View(model);
-        //        }
-        //    }
-
-        //    // If we got this far, something failed, redisplay form
-        //    return View(model);
-        //}
-
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public async Task<IActionResult> LoginWith2fa(bool rememberMe, string returnUrl = null)
-        //{
-        //    // Ensure the user has gone through the username & password screen first
-        //    var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
-
-        //    if (user == null)
-        //    {
-        //        throw new ApplicationException($"Unable to load two-factor authentication user.");
-        //    }
-
-        //    var model = new LoginWith2faViewModel { RememberMe = rememberMe };
-        //    ViewData["ReturnUrl"] = returnUrl;
-
-        //    return View(model);
-        //}
-
-        //[HttpPost]
-        //[AllowAnonymous]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> LoginWith2fa(LoginWith2faViewModel model, bool rememberMe, string returnUrl = null)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return View(model);
-        //    }
-
-        //    var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
-        //    if (user == null)
-        //    {
-        //        throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
-        //    }
-
-        //    var authenticatorCode = model.TwoFactorCode.Replace(" ", string.Empty).Replace("-", string.Empty);
-
-        //    var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, rememberMe, model.RememberMachine);
-
-        //    if (result.Succeeded)
-        //    {
-        //        _logger.LogInformation("User with ID {UserId} logged in with 2fa.", user.Id);
-        //        return RedirectToLocal(returnUrl);
-        //    }
-        //    else if (result.IsLockedOut)
-        //    {
-        //        _logger.LogWarning("User with ID {UserId} account locked out.", user.Id);
-        //        return RedirectToAction(nameof(Lockout));
-        //    }
-        //    else
-        //    {
-        //        _logger.LogWarning("Invalid authenticator code entered for user with ID {UserId}.", user.Id);
-        //        ModelState.AddModelError(string.Empty, "Invalid authenticator code.");
-        //        return View();
-        //    }
-        //}
-
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public async Task<IActionResult> LoginWithRecoveryCode(string returnUrl = null)
-        //{
-        //    // Ensure the user has gone through the username & password screen first
-        //    var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
-        //    if (user == null)
-        //    {
-        //        throw new ApplicationException($"Unable to load two-factor authentication user.");
-        //    }
-
-        //    ViewData["ReturnUrl"] = returnUrl;
-
-        //    return View();
-        //}
-
-        //[HttpPost]
-        //[AllowAnonymous]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> LoginWithRecoveryCode(LoginWithRecoveryCodeViewModel model, string returnUrl = null)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return View(model);
-        //    }
-
-        //    var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
-        //    if (user == null)
-        //    {
-        //        throw new ApplicationException($"Unable to load two-factor authentication user.");
-        //    }
-
-        //    var recoveryCode = model.RecoveryCode.Replace(" ", string.Empty);
-
-        //    var result = await _signInManager.TwoFactorRecoveryCodeSignInAsync(recoveryCode);
-
-        //    if (result.Succeeded)
-        //    {
-        //        _logger.LogInformation("User with ID {UserId} logged in with a recovery code.", user.Id);
-        //        return RedirectToLocal(returnUrl);
-        //    }
-        //    if (result.IsLockedOut)
-        //    {
-        //        _logger.LogWarning("User with ID {UserId} account locked out.", user.Id);
-        //        return RedirectToAction(nameof(Lockout));
-        //    }
-        //    else
-        //    {
-        //        _logger.LogWarning("Invalid recovery code entered for user with ID {UserId}", user.Id);
-        //        ModelState.AddModelError(string.Empty, "Invalid recovery code entered.");
-        //        return View();
-        //    }
-        //}
-
-
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public IActionResult Register(string returnUrl = null)
-        //{
-        //    ViewData["ReturnUrl"] = returnUrl;
-        //    return View();
-        //}
-
-        //[HttpPost]
-        //[AllowAnonymous]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
-        //{
-        //    ViewData["ReturnUrl"] = returnUrl;
-        //    if (ModelState.IsValid)
-        //    {
-        //        var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-        //        var result = await _userManager.CreateAsync(user, model.Password);
-        //        if (result.Succeeded)
-        //        {
-        //            _logger.LogInformation("User created a new account with password.");
-
-        //            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        //            var callbackUrl = Url.EmailConfirmationLink(user.Id, code, Request.Scheme);
-        //            await _emailSender.SendEmailConfirmationAsync(model.Email, callbackUrl);
-
-        //            await _signInManager.SignInAsync(user, isPersistent: false);
-        //            _logger.LogInformation("User created a new account with password.");
-        //            return RedirectToLocal(returnUrl);
-        //        }
-        //        AddErrors(result);
-        //    }
-
-        //    // If we got this far, something failed, redisplay form
-        //    return View(model);
-        //}
-
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult Lockout()
-        {
-            return View();
         }
 
         [HttpPost]
@@ -306,216 +208,8 @@ namespace PwdLess.Controllers
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
-            _logger.LogInformation("User logged out.");
-            return RedirectToAction(nameof(HomeController.Index), "Home");
+            return View("Message", new MessageViewModel() { MessageType = "Success", Message = "You have been successfully logged out." });
         }
-
-        [HttpPost]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public IActionResult ExternalLogin(string provider, string returnUrl = null)
-        {
-            // Request a redirect to the external login provider.
-            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
-            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
-            return Challenge(properties, provider);
-        }
-
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null, string remoteError = null)
-        {
-            if (remoteError != null)
-            {
-                ErrorMessage = $"Error from external provider: {remoteError}";
-                return RedirectToAction(nameof(Login));
-            }
-            var info = await _signInManager.GetExternalLoginInfoAsync();
-            if (info == null)
-            {
-                return RedirectToAction(nameof(Login));
-            }
-
-            // Sign in the user with this external login provider if the user already has a login.
-            var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
-            if (result.Succeeded)
-            {
-                _logger.LogInformation("User logged in with {Name} provider.", info.LoginProvider);
-                return RedirectToLocal(returnUrl);
-            }
-            if (result.IsLockedOut)
-            {
-                return RedirectToAction(nameof(Lockout));
-            }
-            else
-            {
-                // If the user does not have an account, then ask the user to create an account.
-                ViewData["ReturnUrl"] = returnUrl;
-                ViewData["LoginProvider"] = info.LoginProvider;
-                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-                return View("ExternalLogin", new ExternalLoginViewModel { UserName = email });
-
-                //// If the user does not have an account, then create thier account
-                //var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-                //var user = new ApplicationUser { UserName = email, Email = email };
-                //var model = new ExternalLoginViewModel { Username = email };
-                //var result2 = await _userManager.CreateAsync(user);
-                //if (result2.Succeeded)
-                //{
-                //    // allow them to customize their account
-                //    ViewData["ReturnUrl"] = returnUrl;
-                //    ViewData["LoginProvider"] = info.LoginProvider;
-                //    return View(nameof(ExternalLogin), model);
-                //}
-                //AddErrors(result2);
-                //ViewData["ReturnUrl"] = returnUrl;
-                //return View(nameof(ExternalLogin), model);
-            }
-        }
-
-        [HttpPost]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ExternalLoginConfirmation(ExternalLoginViewModel model, string returnUrl = null)
-        {
-            if (ModelState.IsValid)
-            {
-                // Get the information about the user from the external login provider
-                var info = await _signInManager.GetExternalLoginInfoAsync();
-                if (info == null)
-                {
-                    throw new ApplicationException("Error loading external login information during confirmation.");
-                }
-                var user = new ApplicationUser { UserName = model.UserName, Email = info.Principal.FindFirstValue(ClaimTypes.Email) };
-                var result = await _userManager.CreateAsync(user);
-
-                //var user = new ApplicationUser { UserName = model.Username, Email = info.Principal.FindFirstValue(ClaimTypes.Email) };
-                //var result = await _userManager.UpdateAsync(user);
-
-                if (result.Succeeded)
-                {
-                    result = await _userManager.AddLoginAsync(user, info);
-                    if (result.Succeeded)
-                    {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
-                        _logger.LogInformation("User updated an account using {Name} provider.", info.LoginProvider);
-                        return RedirectToLocal(returnUrl);
-                    }
-                }
-                AddErrors(result);
-            }
-
-            ViewData["ReturnUrl"] = returnUrl;
-            return View(nameof(ExternalLogin), model);
-        }
-
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public async Task<IActionResult> ConfirmEmail(string userId, string code)
-        //{
-        //    if (userId == null || code == null)
-        //    {
-        //        return RedirectToAction(nameof(HomeController.Index), "Home");
-        //    }
-        //    var user = await _userManager.FindByIdAsync(userId);
-        //    if (user == null)
-        //    {
-        //        throw new ApplicationException($"Unable to load user with ID '{userId}'.");
-        //    }
-        //    var result = await _userManager.ConfirmEmailAsync(user, code);
-        //    return View(result.Succeeded ? "ConfirmEmail" : "Error");
-        //}
-
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public IActionResult ForgotPassword()
-        //{
-        //    return View();
-        //}
-
-        //[HttpPost]
-        //[AllowAnonymous]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        var user = await _userManager.FindByEmailAsync(model.Email);
-        //        if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
-        //        {
-        //            // Don't reveal that the user does not exist or is not confirmed
-        //            return RedirectToAction(nameof(ForgotPasswordConfirmation));
-        //        }
-
-        //        // For more information on how to enable account confirmation and password reset please
-        //        // visit https://go.microsoft.com/fwlink/?LinkID=532713
-        //        var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-        //        var callbackUrl = Url.ResetPasswordCallbackLink(user.Id, code, Request.Scheme);
-        //        await _emailSender.SendEmailAsync(model.Email, "Reset Password",
-        //           $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
-        //        return RedirectToAction(nameof(ForgotPasswordConfirmation));
-        //    }
-
-        //    // If we got this far, something failed, redisplay form
-        //    return View(model);
-        //}
-
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public IActionResult ForgotPasswordConfirmation()
-        //{
-        //    return View();
-        //}
-
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public IActionResult ResetPassword(string code = null)
-        //{
-        //    if (code == null)
-        //    {
-        //        throw new ApplicationException("A code must be supplied for password reset.");
-        //    }
-        //    var model = new ResetPasswordViewModel { Code = code };
-        //    return View(model);
-        //}
-
-        //[HttpPost]
-        //[AllowAnonymous]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return View(model);
-        //    }
-        //    var user = await _userManager.FindByEmailAsync(model.Email);
-        //    if (user == null)
-        //    {
-        //        // Don't reveal that the user does not exist
-        //        return RedirectToAction(nameof(ResetPasswordConfirmation));
-        //    }
-        //    var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
-        //    if (result.Succeeded)
-        //    {
-        //        return RedirectToAction(nameof(ResetPasswordConfirmation));
-        //    }
-        //    AddErrors(result);
-        //    return View();
-        //}
-
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public IActionResult ResetPasswordConfirmation()
-        //{
-        //    return View();
-        //}
-
-
-        //[HttpGet]
-        //public IActionResult AccessDenied()
-        //{
-        //    return View();
-        //}
 
         #region Helpers
 
@@ -535,7 +229,7 @@ namespace PwdLess.Controllers
             }
             else
             {
-                return RedirectToAction(nameof(HomeController.Index), "Home");
+                return BadRequest(); // TODO: redirect to homepage soemhow
             }
         }
 

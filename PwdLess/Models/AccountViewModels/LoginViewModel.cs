@@ -12,8 +12,7 @@ namespace PwdLess.Models.AccountViewModels
         [EmailAddress]
         public string Email { get; set; }
 
-
-        [Display(Name = "Remember me?")]
-        public bool RememberMe { get; set; }
+        [Display(Name = "Remember me")]
+        public bool RememberMe { get; set; } = true;
     }
 }
