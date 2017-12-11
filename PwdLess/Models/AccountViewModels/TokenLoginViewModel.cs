@@ -7,11 +7,7 @@ using System.Threading.Tasks;
 namespace PwdLess.Models.AccountViewModels
 {
     public class TokenLoginViewModel
-    {
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
-        
+    {   
         public bool RememberMe { get; set; }
 
         public string ReturnUrl { get; set; }
@@ -19,9 +15,11 @@ namespace PwdLess.Models.AccountViewModels
         [Display(Name = "Code")]
         public string Token { get; set; }
 
-        public string Purpose { get; set; }
 
-        [Display(Name = "Make this my primary email")]
-        public bool MakePrimary { get; set; }
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        public string Purpose { get; set; }
     }
 }

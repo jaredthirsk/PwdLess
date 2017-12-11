@@ -59,51 +59,81 @@ namespace PwdLess.Controllers
             ViewData["ReturnUrl"] = returnUrl;
             if (ModelState.IsValid)
             {
+                var token = "";
+                AuthOperation authOperation;
                 var email = _userManager.NormalizeKey(model.Email);
-                var user = new ApplicationUser();
-                var purpose = "";
 
-                if (_signInManager.IsSignedIn(User))
+                var existingVerifiedUser = await _userManager.FindByLoginAsync("Email", email);
+                var existingUser = await _userManager.FindByEmailAsync(email);
+                var signedInUser = await _userManager.GetUserAsync(User);
+                var user = new ApplicationUser();                
+
+                if (signedInUser != null) // User signed in
                 {
-                    user = await _userManager.FindByLoginAsync("Email", email);
-                    if (user == null)
+                    user = signedInUser;
+
+                    if (existingVerifiedUser != null) // Email associated with another user's account
                     {
-                        user = await _userManager.GetUserAsync(User);
-                        purpose = "AddEmail";
-                    } else
-                    {
-                        return View("Message", new MessageViewModel() { MessageType = "Warning", Message = "This email is already added to your account." });
-                    }
-                }
-                else
-                {
-                    user = await _userManager.FindByLoginAsync("Email", email);
-                    if (user == null)
-                    {
-                        user = await _userManager.FindByEmailAsync(email);
-                        if (user == null)
+                        if (existingVerifiedUser.Id == signedInUser.Id) // Email already added to user's account
                         {
-                            user = new ApplicationUser() { Id = email, UserName = email, Email = email };
-                            await _userManager.CreateAsync(user);
-                        } // else someone tried to register with this email but didn't
-                        // Note: users with a User but no "Email" in UserLogins are unverified, trying to register. May need to delete from database after token expires somehow? Maybe add ApplicationUser.IsTemporary?
-                        purpose = "Register";
+                            return View("Message", new MessageViewModel() { MessageType = "Warning", Message = "This email is already added to your account." });
+                        }
+                        else // Email associated with another account that's not the user's
+                        {
+                            authOperation = AuthOperation.AddingOtherUserEmail;
+                        }
                     }
-                    else
+                    else // Email not associated with any other accounts
                     {
-                        purpose = "Login";
+                        if (existingUser != null)
+                        {
+                            // This should never happen. If an email is in someone's account then it has 
+                        }
+                        authOperation = AuthOperation.AddingNovelEmail;
                     }
                 }
+                else // User not signed in
+                {
+                    if (existingVerifiedUser != null) // Email associated with an account, trying to login
+                    {
+                        user = existingVerifiedUser;
+                        authOperation = AuthOperation.LoggingIn;
+                    }
+                    else // Email not associated with any other accounts, trying to register
+                    {
+                        if (existingUser != null) // Temp account exists
+                        {
+                            user = existingUser;
+                        }
+                        else // Create temp account for token generation if doesn't exist
+                        {
+                            user = new ApplicationUser() { Email = email, UserName = Guid.NewGuid().ToString(), EmailConfirmed = false }; // TODO: customize these starters, this is how every new account starts
+                            var result = await _userManager.CreateAsync(signedInUser);
+                            if (!result.Succeeded)
+                                return View("Message", new MessageViewModel() { MessageType = "Error", Message = "An unexpected error occured." });
+                        }
 
-                _logger.LogDebug($"USER: {user.Id} ATTEMPTING PURPOSE: {purpose} WITH EMAIL: {email}");
+                        authOperation = AuthOperation.Registering;
+                    }
 
-                var token = await _userManager.GenerateUserTokenAsync(user, "Email", purpose);
+                }
 
-                var callbackUrl = Url.EmailConfirmationLink(Request.Scheme, new TokenLoginViewModel { Token = token, Email = email, RememberMe = model.RememberMe, ReturnUrl = returnUrl, Purpose = purpose, MakePrimary = true });
+                // Note:
+                // If existingUser exists but existingVerifiedUser does not, 
+                // someone tried to register with this email but didn't
+                // Note: users with a User but no "Email" in UserLogins are unverified, trying to register. May need to delete from database after token expires somehow? Maybe add ApplicationUser.IsTemporary?
+                // An email is only ever added to UserLogins if it has been verified for that user
+                // A user can never have an Email in their account that's not in UserLogins - even in external logins, I don't just make their email the one that the external login gives me blindly!
 
-                await _emailSender.SendEmailConfirmationAsync(email, callbackUrl, token);
 
-                return RedirectToAction(nameof(TokenLoginManual), new TokenLoginViewModel { Email = email, RememberMe = model.RememberMe, ReturnUrl = returnUrl, Purpose = purpose, MakePrimary = true });
+                if (authOperation != AuthOperation.AddingOtherUserEmail)
+                    token = await _userManager.GenerateUserTokenAsync(user, "Email", email); // Purpose is supplied email
+
+                var callbackUrl = Url.EmailConfirmationLink(Request.Scheme, new TokenLoginViewModel { Token = token, RememberMe = model.RememberMe, ReturnUrl = returnUrl, Email = user.Email, Purpose = email });
+
+                await _emailSender.SendEmailConfirmationAsync(email, authOperation, callbackUrl, token);
+
+                return RedirectToAction(nameof(TokenLoginManual), new TokenLoginViewModel { RememberMe = model.RememberMe, ReturnUrl = returnUrl, Email = user.Email, Purpose = email });
 
             }
 
@@ -123,6 +153,24 @@ namespace PwdLess.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> TokenLogin(TokenLoginViewModel model)
         {
+
+
+            if (model.Token == null)
+                return View("Message", new MessageViewModel() { MessageType = "Error", Message = "No code supplied." });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             if (model.Token == null)
                 return View("Message", new MessageViewModel() { MessageType = "Error", Message = "No code supplied." });
             if (model.Purpose != "Register" && model.Purpose != "Login" && model.Purpose != "AddEmail")
@@ -130,6 +178,7 @@ namespace PwdLess.Controllers
 
             var email = _userManager.NormalizeKey(model.Email);
             var user = await _userManager.FindByLoginAsync("Email", email);
+            var isTryingToAddOtherUserEmail = false; 
 
             if (user == null)
             {
@@ -140,17 +189,40 @@ namespace PwdLess.Controllers
                 else
                     return View("Message", new MessageViewModel() { MessageType = "Error", Message = "An unexpected error occured." });
             }
+            else
+            {
+                if (model.Purpose == "AddEmail")
+                {
+                    var currentUser = await _userManager.GetUserAsync(User);
+                    if (user.Id != currentUser.Id)
+                    {
+                        isTryingToAddOtherUserEmail = true;
+                    }
+                    else
+                    {
+                        return View("Message", new MessageViewModel() { MessageType = "Warning", Message = "This email is already added to your account." });
+                    }
+                }
+            }
 
             var result = await _userManager.VerifyUserTokenAsync(user, "Email", model.Purpose, model.Token);
 
             if (result)
             {
+                if (model.Purpose == "Register")
+                {
+                    // ASK USER TO INPUT REQUIRED INFO before signing them in or adding an email login
+                }
                 if (model.Purpose == "Login" || model.Purpose == "Register")
                 {
                     await _signInManager.SignInAsync(user, isPersistent: model.RememberMe);
                 }
                 if (model.Purpose == "AddEmail" || model.Purpose == "Register")
                 {
+                    if (isTryingToAddOtherUserEmail)
+                    {
+                        return View("Message", new MessageViewModel() { MessageType = "Error", Message = $"The email {email} is already in use by another account!", Description = "Try logging in with that email instead. If you still need to add it to this account then delete the other one." });
+                    }
                     var addAddResult = await _userManager.AddLoginAsync(user, new UserLoginInfo("Email", email, "Email"));
                     if (addAddResult.Succeeded)
                     {
@@ -176,14 +248,12 @@ namespace PwdLess.Controllers
                     }
                 }
 
-            } else
+            } else // TRY else { AddErrors(result) } WHEN YOU'RE FEELIN' FANCY
             {
                 return View("Message", new MessageViewModel() { MessageType = "Error", Message = "Problem validating code." });
             }
 
             // Success
-            Console.WriteLine("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" + model.ReturnUrl);
-            _logger.LogDebug("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG"+model.ReturnUrl);
 
             if (model.ReturnUrl == "" || model.ReturnUrl == null)
             {
@@ -208,7 +278,145 @@ namespace PwdLess.Controllers
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
-            return View("Message", new MessageViewModel() { MessageType = "Success", Message = "You have been successfully logged out." });
+            return RedirectToAction(nameof(HomeController.Index), "Home");
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Lockout()
+        {
+            return View();
+        }
+
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExternalLoginAsync(string provider, string returnUrl = null)
+        {
+            if (_signInManager.IsSignedIn(User))
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme); // Clear the existing external cookie to ensure a clean login process
+
+            // Request a redirect to the external login provider.
+            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+            return Challenge(properties, provider);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null, string remoteError = null)
+        {
+            if (remoteError != null)
+            {
+                ErrorMessage = $"Error from external provider: {remoteError}"; // TODO: research ErrorMessage
+                return RedirectToAction(nameof(Login));
+            }
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null)
+            {
+                var result = await _userManager.AddLoginAsync(user, info);
+                if (result.Succeeded)
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    // Clear the existing external cookie to ensure a clean login process
+                    await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                    return View("Message", new MessageViewModel() { MessageType = "Success", Message = $"External login {info.ProviderDisplayName} successfully added to your account." });
+                } else
+                {
+                    return View("Message", new MessageViewModel() { MessageType = "Error", Message = $"There was a problem adding this external login to your account." });
+                }
+            }
+
+
+            // Sign in the user with this external login provider if the user already has a login.
+            var result2 = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+            if (result2.Succeeded)
+            {
+                _logger.LogInformation("User logged in with {Name} provider.", info.LoginProvider);
+                return RedirectToLocal(returnUrl); // TODO: again refactor this kinds thing
+            }
+            if (result2.IsLockedOut)
+            {
+                return RedirectToAction(nameof(Lockout));
+            }
+            else
+            { // they don't have an account
+                ViewData["ReturnUrl"] = returnUrl;
+                ViewData["LoginProvider"] = info.LoginProvider;
+                var email = _userManager.NormalizeKey(info.Principal.FindFirstValue(ClaimTypes.Email));
+                
+
+                user = await _userManager.FindByLoginAsync("Email", email);
+                if (user == null)
+                {
+                    user = await _userManager.FindByEmailAsync(email);
+                    if (user == null)
+                    {
+                        user = new ApplicationUser() { Email = email, UserName = Guid.NewGuid().ToString() };
+                        var result3 = await _userManager.CreateAsync(user);
+                        if (!result3.Succeeded)
+                            _logger.LogDebug(result3.Errors.FirstOrDefault().ToString());
+                    } // else someone tried to register with this email but didn't
+                      // Note: users with a User but no "Email" in UserLogins are unverified, trying to register. May need to delete from database after token expires somehow? Maybe add ApplicationUser.IsTemporary?
+                      // An email is only ever added to UserLogins if it has been verified for that user
+                      // A user can have an Email int heir account that's not in UserLogins - means that is their primary email in case of external logins or that they didn't compelte registration
+                }
+                else // a verified account exists
+                {
+                    return View("Message", new MessageViewModel() { MessageType = "Error", Message = "This email is already associated with an account." });
+                }
+
+                // they're ready for login, just grab a few more infos
+                return View("ExternalLogin", new ExternalLoginViewModel { UserName = email }); // <- change + rename external login to maybe RegisterExtraInfo 
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExternalLoginConfirmation(ExternalLoginViewModel model, string returnUrl = null)
+        {
+            if (ModelState.IsValid)
+            {
+                // Get the information about the user from the external login provider
+                var info = await _signInManager.GetExternalLoginInfoAsync();
+                if (info == null)
+                    return View("Message", new MessageViewModel() { MessageType = "Error", Message = "An unexpected error occured." });
+
+
+                var user = await _userManager.FindByEmailAsync(info.Principal.FindFirstValue(ClaimTypes.Email));
+
+                if (user == null)
+                    return View("Message", new MessageViewModel() { MessageType = "Error", Message = "An unexpected error occured." });
+
+                user.UserName = model.UserName;
+                var result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded)
+                    AddErrors(result);
+
+                result = await _userManager.AddLoginAsync(user, info);
+                if (result.Succeeded)
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    _logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider); // TODO: do I need to start logging everything?
+                    return RedirectToLocal(returnUrl);
+                }
+            }
+
+            ViewData["ReturnUrl"] = returnUrl;
+
+            if (returnUrl == "" || returnUrl == null) // TODO: sound familiar? Refactor!
+            {
+                return View("Message", new MessageViewModel() { MessageType = "Success", Message = "You have successfully logged-in." });
+            }
+
+            return View(nameof(ExternalLoginAsync), model);
         }
 
         #region Helpers

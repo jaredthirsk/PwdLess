@@ -8,24 +8,7 @@
     <div class="column">
         <h3 class="text-success">@ViewData["Title"]</h3>
         <div>
-            Please check <em>@Model.Email.ToLower()</em> now!
-
-            @if (Model.Purpose == "AddEmail")
-            {
-                <div>Enter the code sent to be able to use this email to access your account.</div>
-            }
-            else if (Model.Purpose == "Register")
-            {
-                <div>Enter the code sent to signup with your email.</div>
-            }
-            else if (Model.Purpose == "Login")
-            {
-                <div>Enter the code sent to login with your email.</div>
-            }
-            else
-            {
-                <div class="text-danger">Somehting has gone wrong.</div>
-            }
+            Please check your email now.
         </div>
     </div>
 </div>
@@ -36,27 +19,20 @@
 
         <div asp-validation-summary="All" class="text-danger"></div>
 
-        <input asp-for="Email" type="hidden" value="@Model.Email" />
         <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />
         <input asp-for="ReturnUrl" type="hidden" value="@Model.ReturnUrl" />
+        <input asp-for="Email" type="hidden" value="@Model.Email" />
         <input asp-for="Purpose" type="hidden" value="@Model.Purpose" />
 
 
         <label asp-for="Token"></label>
-        <input asp-for="Token"/>
-
-
-        @if (Model.Purpose == "AddEmail")
-        {
-        <div class="float-right">
-            <input asp-for="MakePrimary" class="form-control" />
-            <label asp-for="MakePrimary" class="label-inline"></label>
-        </div>
-        }
-
+        <input asp-for="Token" />
 
         <button type="submit" class="button-primary">Check Code</button>
 
     </form>
 
 </div>
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

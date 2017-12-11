@@ -2,6 +2,7 @@
 @using System.Linq
 @using Microsoft.AspNetCore.Http
 @using Microsoft.AspNetCore.Http.Authentication
+@using PwdLess.Controllers
 @model LoginViewModel
 @inject SignInManager<ApplicationUser> SignInManager
 
@@ -47,7 +48,8 @@ else
             @if (SignInManager.IsSignedIn(User))
             {
                 <span>Add email</span>
-            } else
+            }
+            else
             {
                 <span>Login or signup</span>
             }
@@ -68,7 +70,7 @@ else
         <h4>Or an external login...</h4>
 
         <div class="row">
-            <form asp-action="ExternalLogin" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
+            <form asp-action="@nameof(AccountController.ExternalLoginAsync)" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
                 <div>
                     <p>
                         @foreach (var provider in loginProviders)
@@ -81,4 +83,8 @@ else
         </div>
 
     }
+}
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
 }
