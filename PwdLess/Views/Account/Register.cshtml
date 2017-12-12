@@ -1,0 +1,50 @@
+﻿@using System.Reflection
+@using PwdLess.Models
+@using System
+
+@model RegisterViewModel
+
+@{
+    ViewData["Title"] = "Complete registration";
+}
+
+<div class="row">
+    <div class="column">
+        <h3>Just one more thing!</h3>
+        Fill out the following to complete your registration.
+        @if (ViewData["LoginProvider"] != null)
+        {
+            <small><em>(Registering with @ViewData["LoginProvider"])</em></small>
+        }
+    </div>
+</div>
+
+<div class="row">
+    <div class="column">
+        <form asp-action="RegisterConfirmation" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post">
+
+            <input asp-for="Email" type="hidden" value="@Model.Email" />
+            <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />
+            <input asp-for="Token" type="hidden" value="@Model.Token" />
+
+
+            <div asp-validation-summary="All" class="text-danger"></div>
+            
+            <label asp-for="UserName"></label>
+            <input asp-for="UserName" />
+
+
+            <!--foreach (var property in typeof(IAdditionalUserInfo).GetProperties(BindingFlags.Public | BindingFlags.Instance)){}-->
+
+            <label asp-for="FavColor"></label>
+            <input asp-for="FavColor" />
+
+            <button type="submit" class="button-primary">Register</button>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

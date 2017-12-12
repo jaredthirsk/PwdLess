@@ -264,6 +264,8 @@ namespace PwdLess.Migrations
 
                     b.Property<bool>("EmailConfirmed");
 
+                    b.Property<string>("FavColor");
+
                     b.Property<bool>("LockoutEnabled");
 
                     b.Property<DateTimeOffset?>("LockoutEnd");

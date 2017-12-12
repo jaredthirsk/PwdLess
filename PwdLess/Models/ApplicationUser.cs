@@ -8,8 +8,11 @@ using Microsoft.AspNetCore.Identity;
 namespace PwdLess.Models
 {
     // Add profile data for application users by adding properties to the ApplicationUser class
-    public class ApplicationUser : IdentityUser
+    public class ApplicationUser : IdentityUser, IAdditionalUserInfo
     {
         //public long DateCreated { get; set; }
+
+        // from IAdditionalUserInfo
+        public string FavColor { get; set; }
     }
 }

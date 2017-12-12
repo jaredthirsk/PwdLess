@@ -29,7 +29,7 @@ else
 }
 
 <div class="row">
-    <form asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
+    <form asp-route-returnrl="@ViewData["ReturnUrl"]" method="post" class="column"> <!--TODO: try returnUrl instead of returnurl-->
         <div asp-validation-summary="All" class="text-danger"></div>
 
         <label asp-for="Email"></label>
@@ -39,7 +39,7 @@ else
         @if (!SignInManager.IsSignedIn(User))
         {
             <div class="float-right">
-                <input asp-for="RememberMe" />
+                <input asp-for="RememberMe" checked="@true" />
                 <label asp-for="RememberMe" class="label-inline">@Html.DisplayNameFor(m => m.RememberMe)</label>
             </div>
         }
