@@ -11,21 +11,12 @@ namespace PwdLess
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
-            var configuration = new ConfigurationBuilder()
-                .AddCommandLine(args)
-                .Build();
+        public static void Main(string[] args) =>
+            BuildWebHost(args).Run();
 
-            var host = new WebHostBuilder()
-                .UseKestrel()
-                .UseUrls(configuration["url"])
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseIISIntegration()
+        public static IWebHost BuildWebHost(string[] args) =>
+            WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 .Build();
-
-            host.Run();
-        }
     }
 }
