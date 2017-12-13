@@ -21,15 +21,17 @@
 
 <div class="row">
     <div class="column">
-        <form asp-action="RegisterConfirmation" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post"> <!-- TODO: use nameof everywhere for asp-action -->
+        <form asp-action="RegisterConfirmation" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post">
+            <!-- TODO: use nameof everywhere for asp-action -->
 
             <input asp-for="Email" type="hidden" value="@Model.Email" />
+            <input asp-for="EmailFromExternalProvider" type="hidden" value="@Model.EmailFromExternalProvider" />
             <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />
             <input asp-for="Token" type="hidden" value="@Model.Token" />
 
 
             <div asp-validation-summary="All" class="text-danger"></div>
-            
+
             <label asp-for="UserName"></label>
             <input asp-for="UserName" />
 

@@ -298,59 +298,50 @@ namespace PwdLess.Controllers
         public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null, string remoteError = null)
         {
             if (remoteError != null)
-            {
-                //ErrorMessage = $"Error from external provider: {remoteError}"; // TODO: research ErrorMessage
                 return RedirectToAction(nameof(Login));
-            }
 
             var info = await _signInManager.GetExternalLoginInfoAsync();
+
             if (info == null)
-            {
                 return RedirectToAction(nameof(Login));
-            }
 
-            var user = await _userManager.GetUserAsync(User);
-            if (user != null) // The user is signed-in
+            var userCurrentlySignedIn = await _userManager.GetUserAsync(User);
+
+            if (userCurrentlySignedIn == null) // No locally signed-in user (trying to register or login)
             {
-                var result = await _userManager.AddLoginAsync(user, info);
-                if (result.Succeeded)
-                {
-                    await _signInManager.SignInAsync(user, isPersistent: false);
+                var externalLoginResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
 
+                if (externalLoginResult.Succeeded)
+                    return RedirectToLocal(returnUrl); // Success logging in
+
+                if (externalLoginResult.IsLockedOut || externalLoginResult.IsNotAllowed)
+                    return RedirectToAction(nameof(Lockout));
+                
+                // The user does not have an account, is attempting to register
+                ViewData["ReturnUrl"] = returnUrl;
+                ViewData["LoginProvider"] = info.LoginProvider;
+                return View("Register", new RegisterViewModel()
+                {
+                    EmailFromExternalProvider = info.Principal.FindFirstValue(ClaimTypes.Email)
+                });
+
+            }
+            else // A user is currently locally signed-in (trying to add external login)
+            {
+                var addLoginResult = await _userManager.AddLoginAsync(userCurrentlySignedIn, info);
+
+                if (addLoginResult.Succeeded)
+                {
                     await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme); // Clear the existing external cookie to ensure a clean login process
 
-                    return View("Message", new NoticeViewModel()
-                    {
-                        NoticeType = "Success",
-                        Title = $"External login {info.ProviderDisplayName} successfully added to your account."
-                    });
+                    return RedirectToLocal(returnUrl); // TODO: maybe something more descriptive that says "yes, we successfully added that external login bruh"
                 }
                 else
                 {
-                    return View("Message", new NoticeViewModel()
+                    return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
                     {
-                        NoticeType = "Error",
-                        Title = "An unexpected error occured. Please try again later."
+                        NoticeType = NoticeType.Error
                     });
-                }
-            }
-            else // The user is not signed-in
-            {
-                var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
-                if (result.Succeeded)
-                {
-                    return RedirectToLocal(returnUrl); // Success logging in
-                }
-                else if (result.IsLockedOut || result.IsNotAllowed)
-                {
-                    return RedirectToAction(nameof(Lockout));
-                }
-                else // The user does not have an account, is attempting to register
-                {
-                    ViewData["ReturnUrl"] = returnUrl;
-                    ViewData["LoginProvider"] = info.LoginProvider;
-                    var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-                    return View("Register", new RegisterViewModel() { Email = email });
                 }
             }
 
@@ -362,78 +353,78 @@ namespace PwdLess.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterConfirmation(RegisterViewModel model, string returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
+
+            if (!ModelState.IsValid || (String.IsNullOrWhiteSpace(model.Email) ^ String.IsNullOrWhiteSpace(model.Email)))
+                return View("Register", model);
+
             var email = _userManager.NormalizeKey(model.Email);
-            UserLoginInfo info = await _signInManager.GetExternalLoginInfoAsync();
-            //var existingUser = await _userManager.FindByEmailAsync(email)
-                ?? new ApplicationUser()
-                {
-                    Id = email,
-                    Email = email,
-                    SecurityStamp = ""
-                };
 
-            existingUser.UserName = model.UserName;
-            existingUser.FavColor = model.FavColor;
+            UserLoginInfo loginInfo = await _signInManager.GetExternalLoginInfoAsync();
 
-            if (info != null) // The user is coming here after an external login to complete registration
+            var userEmpty = new ApplicationUser()
             {
-            }
-            else // The user is trying to register locally
+                UserName = model.UserName,
+                SecurityStamp = "",
+
+                FavColor = model.FavColor,
+            };
+
+            if (loginInfo == null) // User trying to register locally
             {
-                var existingVerifiedUser = await _userManager.FindByLoginAsync("Email", email);
+                userEmpty.Id = email;
+                userEmpty.Email = email;
+                userEmpty.EmailConfirmed = true;
 
-                var result = await _userManager.VerifyUserTokenAsync(existingUser, "Default", "Register", model.Token);
+                var userWithConfirmedEmail = await _userManager.FindByLoginAsync("Email", email);
 
-                if (result && existingVerifiedUser == null) // Verified email supplied & user not registered
+                var isTokenValid = await _userManager.VerifyUserTokenAsync(userEmpty, "Default", "Register", model.Token);
+
+                if (isTokenValid && userWithConfirmedEmail == null) // Supplied email is verified & user does not exist
                 {
-                    info = new UserLoginInfo("Email", existingUser.Email, "Email");
-                    
-                    existingUser.EmailConfirmed = true;
+                    userEmpty.Id = null;
+                    loginInfo = new UserLoginInfo("Email", userEmpty.Email, "Email");
                 }
                 else
                 {
-                    return View("Message", new NoticeViewModel()
+                    return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
                     {
-                        NoticeType = "Error",
-                        Title = "An unexpected error occured. Please try again later." // TODO: better errors
+                        NoticeType = NoticeType.Error
                     });
                 }
+
+            }
+            else // User trying to register after external login
+            {
+                userEmpty.EmailFromExternalProvider = email;
             }
 
-            existingUser.Id = null;
-            var createResult = await _userManager.CreateAsync(existingUser);
-
-            // TODO: edge case where email trying to register with is already used as unconfirmed primary email (of an external login account),
-            //       in that case it is allowed to *delete* the external login account alltogether (maybe after prompt? - maybe in TokenLogin?)
-            //       since the true owner of that email just came in!
-
-               
+            var createResult = await _userManager.CreateAsync(userEmpty);            
 
             if (!createResult.Succeeded) // TODO: refactor?
             {
                 AddErrors(createResult);
-                ViewData["ReturnUrl"] = returnUrl;
                 return View("Register", model);
             }
 
 
-            var addResult = await _userManager.AddLoginAsync(existingUser, info);
-            if (addResult.Succeeded)
+            var addLoginResult = await _userManager.AddLoginAsync(userEmpty, loginInfo);
+
+            if (!addLoginResult.Succeeded)
             {
-                await _signInManager.SignInAsync(existingUser, isPersistent: model.RememberMe);
-                // Success
-                return RedirectToLocal(returnUrl);
-            } else
-            {
-                return View("Message", new NoticeViewModel()
+                await _userManager.DeleteAsync(userEmpty);
+
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
                 {
-                    NoticeType = "Error",
-                    Title = "An unexpected error occured. Please try again later." // TODO: better errors
+                    NoticeType = NoticeType.Error
                 });
             }
 
-        }
+            // Success
+            await _signInManager.SignInAsync(userEmpty, isPersistent: model.RememberMe);
+            return RedirectToLocal(returnUrl);
 
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -449,9 +440,7 @@ namespace PwdLess.Controllers
         {
             return View();
         }
-
-    
-        
+  
         #region Helpers
 
         private void AddErrors(IdentityResult result)

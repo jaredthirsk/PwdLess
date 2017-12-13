@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using OpenIddict.Core;
+using PwdLess.Models.HomeViewModels;
 
 namespace PwdLess.Controllers
 {
@@ -66,9 +67,9 @@ namespace PwdLess.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return View("Message", new NoticeViewModel()
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
                 {
-                    NoticeType = "Error",
+                    NoticeType = NoticeType.Error,
                     Title = OpenIdConnectConstants.Errors.ServerError,
                     Description = "An internal error has occurred"
                 });

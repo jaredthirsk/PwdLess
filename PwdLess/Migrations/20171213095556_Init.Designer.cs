@@ -11,7 +11,7 @@ using System;
 namespace PwdLess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20171211063406_Init")]
+    [Migration("20171213095556_Init")]
     partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -264,6 +264,8 @@ namespace PwdLess.Migrations
                         .HasMaxLength(256);
 
                     b.Property<bool>("EmailConfirmed");
+
+                    b.Property<string>("EmailFromExternalProvider");
 
                     b.Property<string>("FavColor");
 

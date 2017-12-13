@@ -7,7 +7,6 @@ using PwdLess.Models.HomeViewModels;
 
 namespace PwdLess.Controllers
 {
-    [Route("[controller]/[action]")]
     public class HomeController : Controller
     {
         [HttpGet]

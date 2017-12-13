@@ -14,6 +14,9 @@ namespace PwdLess.Models.AccountViewModels
         [EmailAddress]
         public string Email { get; set; }
 
+        [EmailAddress]
+        public string EmailFromExternalProvider { get; set; }
+
         [Required]
         [Display(Name = "User name", Description = "Should be unique.")]
         public string UserName { get; set; }
