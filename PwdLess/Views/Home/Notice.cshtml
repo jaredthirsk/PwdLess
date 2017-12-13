@@ -1,20 +1,24 @@
-﻿@model MessageViewModel
+﻿@model NoticeViewModel
 @{
     ViewData["Title"] = "Hey!";
 }
 
 <div class="row">
     <div class="column">
-        @if (Model.MessageType == "Error")
-        {
+    @switch (Model.NoticeType)
+    {
+        case NoticeType.Error:
             <h3 class="text-danger">Something went wrong!</h3>
-        } else if (Model.MessageType == "Warning")
-        {
+            break;
+        case NoticeType.Warning:
             <h3 class="text-warning">Ooops!</h3>
-        } else if (Model.MessageType == "Success")
-        {
+            break;
+        case NoticeType.Success:
             <h3 class="text-success">Success!</h3>
-        }
+            break;
+    }
+
+
     </div>
 </div>
 
@@ -28,16 +32,15 @@
             </p>
         </div>
     </div>
-
 }
 
-@if (!string.IsNullOrEmpty(Model.Message))
+@if (!string.IsNullOrEmpty(Model.Title))
 {
     <div class="row">
         <div class="column">
-            @if (!string.IsNullOrEmpty(Model.Message))
+            @if (!string.IsNullOrEmpty(Model.Title))
             {
-                <h4>@Model.Message</h4>
+                <h4>@Model.Title</h4>
             }
             @if (!string.IsNullOrEmpty(Model.Description))
             {
@@ -50,6 +53,6 @@
 <div class="row">
     <div class="column">
         <button onclick="window.history.back();" class="button">Back</button>
-        <a asp-area="" asp-controller="Home" asp-action="Index" class="button">Home</a>
+        <a asp-area="" asp-controller="Home" asp-action="Index" class="button float-right">Home</a>
     </div>
 </div>

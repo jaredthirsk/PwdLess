@@ -1,0 +1,22 @@
+﻿@model NoticeViewModel
+@inject SignInManager<ApplicationUser> SignInManager
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="row">
+    <div class="column">
+
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <a asp-area="" asp-controller="Home" asp-action="Index">Add another login method</a>
+        }
+        else
+        {
+            <a asp-area="" asp-controller="Home" asp-action="Index">Login</a>
+        }
+
+        <!-- TODO: manage button here -->
+
+    </div>
+</div>

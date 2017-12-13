@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace PwdLess.Services
+namespace PwdLess.Models
 {
     public enum AuthOperation
     {

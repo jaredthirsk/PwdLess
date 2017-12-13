@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using PwdLess.Models;
 using PwdLess.Services;
 
 namespace PwdLess.Services
 {
     public static class EmailSenderExtensions
     {
-        public static Task SendEmailConfirmationAsync(this IEmailSender emailSender, string email, AuthOperation messageKind, string link, string token)
+        public static Task SendTokenAsync(this IEmailSender emailSender, string email, AuthOperation messageKind, string link, string token)
         {
             var subject = "";
             var message = "";
@@ -24,8 +25,7 @@ namespace PwdLess.Services
                     break;
                 case AuthOperation.AddingNovelEmail:
                     subject = "Add this email to your account";
-                    message = $"To add this email to your account, please click this link: <a href='{link}'>link</a>" +
-                        $"Alternatively, use this code: {token}";
+                    message = $"To add this email to your account, please use this code: {token}";
                     break;
                 case AuthOperation.Registering:
                     subject = "Create your account";

@@ -3,14 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using PwdLess.Models.HomeViewModels;
 
 namespace PwdLess.Controllers
 {
+    [Route("[controller]/[action]")]
     public class HomeController : Controller
     {
+        [HttpGet]
         public IActionResult Index()
         {
-            return RedirectToAction(nameof(AccountController.Login), "Account");
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult Notice(NoticeViewModel model)
+        {
+            return View(model);
         }
     }
 }

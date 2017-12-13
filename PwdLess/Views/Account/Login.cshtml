@@ -10,23 +10,19 @@
     ViewData["Title"] = "Log in";
 }
 
-@if (SignInManager.IsSignedIn(User))
-{
-    <div class="row">
-        <h3 class="column">
-            Add another login method
-        </h3>
-    </div>
-}
-else
-{
-    <div class="row">
-        <h3 class="column">
-            Login or signup
-        </h3>
-    </div>
 
-}
+<div class="row">
+    <h3 class="column">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <span>Add another login method</span>
+        }
+        else
+        {
+            <span>Login or signup</span>
+        }
+    </h3>
+</div>
 
 <div class="row">
     <form asp-route-returnrl="@ViewData["ReturnUrl"]" method="post" class="column"> <!--TODO: try returnUrl instead of returnurl-->
@@ -34,7 +30,6 @@ else
 
         <label asp-for="Email"></label>
         <input asp-for="Email" />
-        <span asp-validation-for="Email" class="text-danger"></span>
 
         @if (!SignInManager.IsSignedIn(User))
         {

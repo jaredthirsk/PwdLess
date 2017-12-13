@@ -10,9 +10,15 @@ namespace PwdLess.Models
     // Add profile data for application users by adding properties to the ApplicationUser class
     public class ApplicationUser : IdentityUser, IAdditionalUserInfo
     {
+        [EmailAddress]
+        public string EmailFromExternalProvider { get; set; }
+
         //public long DateCreated { get; set; }
 
         // from IAdditionalUserInfo
         public string FavColor { get; set; }
+
+
+
     }
 }

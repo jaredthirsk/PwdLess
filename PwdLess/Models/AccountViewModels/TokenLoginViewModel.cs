@@ -12,14 +12,15 @@ namespace PwdLess.Models.AccountViewModels
 
         public string ReturnUrl { get; set; }
 
+        [Required]
         [Display(Name = "Code")]
         public string Token { get; set; }
-
 
         [Required]
         [EmailAddress]
         public string Email { get; set; }
 
+        [Required]
         public string Purpose { get; set; }
     }
 }

@@ -21,7 +21,7 @@
 
 <div class="row">
     <div class="column">
-        <form asp-action="RegisterConfirmation" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post">
+        <form asp-action="RegisterConfirmation" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post"> <!-- TODO: use nameof everywhere for asp-action -->
 
             <input asp-for="Email" type="hidden" value="@Model.Email" />
             <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />
