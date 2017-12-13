@@ -96,7 +96,8 @@ namespace PwdLess.Controllers
                         return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
                         {
                             NoticeType = NoticeType.Warning,
-                            Title = "This email is already added to your account."
+                            Title = "This email is already added to your account.",
+                            Description = " "
                         });
                     }
                     else // Email associated with another account that's not the user's
@@ -112,6 +113,7 @@ namespace PwdLess.Controllers
             switch (attemptedOperation)
             {
                 case AuthOperation.AddingOtherUserEmail:
+                    purpose = "AddEmail";
                     break;
                 case AuthOperation.AddingNovelEmail:
                     purpose = "AddEmail";
@@ -159,13 +161,17 @@ namespace PwdLess.Controllers
         public async Task<IActionResult> TokenLogin(TokenLoginViewModel model)
         {
 
-            if (!ModelState.IsValid)
-                return View(nameof(TokenLoginManual));
-                //return RedirectToAction(nameof(HomeController.Notice), "Home", new
-                //{
-                //    NoticeType = NoticeType.Warning,
-                //    Title = "Invalid parameters supplied."
-                //});
+            if (String.IsNullOrWhiteSpace(model.Email) ||
+                String.IsNullOrWhiteSpace(model.Purpose) ||
+                String.IsNullOrWhiteSpace(model.Token))
+            {
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                {
+                    NoticeType = NoticeType.Warning,
+                    Title = "Invalid parameters supplied.",
+                    Description = "Did you type in the code correctly?"
+                });
+            }
 
             var email = _userManager.NormalizeKey(model.Email);
             
@@ -199,7 +205,7 @@ namespace PwdLess.Controllers
                 {
                     NoticeType = NoticeType.Error,
                     Title = "Problem validating code.",
-                    Description = "Your code might have expired. Simply try again!"
+                    Description = "Your code might have expired. Please try again!"
                 });
 
             // Valid {token + email (user) + purpose} supplied
@@ -259,7 +265,8 @@ namespace PwdLess.Controllers
                         return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
                         {
                             NoticeType = NoticeType.Warning,
-                            Title = "This email is already in your account."
+                            Title = "This email is already in your account.",
+                            Description = " "
                         });
                     }
                     else // Email associated with another account (same user since both verified!)
@@ -268,7 +275,7 @@ namespace PwdLess.Controllers
                         {
                             NoticeType = NoticeType.Error,
                             Title = "This email is in another user's account.",
-                            Description = $"To add it to this account instead, login with {emailToAdd} and delete the account or add an alternative email."
+                            Description = $"To add it to this account instead, login to {emailToAdd} then delete the account or add an alternative login method."
                         });
                     }
                 }
@@ -307,6 +314,8 @@ namespace PwdLess.Controllers
 
             var userCurrentlySignedIn = await _userManager.GetUserAsync(User);
 
+            var emailFromExternalLoginProvider = _userManager.NormalizeKey(info.Principal.FindFirstValue(ClaimTypes.Email));
+
             if (userCurrentlySignedIn == null) // No locally signed-in user (trying to register or login)
             {
                 var externalLoginResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
@@ -322,27 +331,54 @@ namespace PwdLess.Controllers
                 ViewData["LoginProvider"] = info.LoginProvider;
                 return View("Register", new RegisterViewModel()
                 {
-                    EmailFromExternalProvider = info.Principal.FindFirstValue(ClaimTypes.Email)
+                    EmailFromExternalProvider = emailFromExternalLoginProvider
                 });
 
             }
             else // A user is currently locally signed-in (trying to add external login)
             {
-                var addLoginResult = await _userManager.AddLoginAsync(userCurrentlySignedIn, info);
+                var userWithExternalLogin = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
 
+                if (userWithExternalLogin != null) // External login already in use
+                {
+                    if (userWithExternalLogin.Id == userCurrentlySignedIn.Id) // External login is already in user's account
+                    {
+                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                        {
+                            NoticeType = NoticeType.Warning,
+                            Title = "This external login is already in your account.",
+                            Description = " "
+                        });
+                    }
+                    else
+                    {
+                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                        {
+                            NoticeType = NoticeType.Error,
+                            Title = "This external login is in another user's account.",
+                            Description = $"To add it to this account instead, login to the other account then delete it or add an alternative login method."
+                        });
+                    }
+                }
+
+                userCurrentlySignedIn.EmailFromExternalProvider = emailFromExternalLoginProvider;
+
+                var addLoginResult = await _userManager.AddLoginAsync(userCurrentlySignedIn, info);
                 if (addLoginResult.Succeeded)
                 {
-                    await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme); // Clear the existing external cookie to ensure a clean login process
-
-                    return RedirectToLocal(returnUrl); // TODO: maybe something more descriptive that says "yes, we successfully added that external login bruh"
-                }
-                else
-                {
-                    return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                    var updateResult = await _userManager.UpdateAsync(userCurrentlySignedIn);
+                    if (updateResult.Succeeded)
                     {
-                        NoticeType = NoticeType.Error
-                    });
+                        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme); // Clear the existing external cookie to ensure a clean login process
+
+                        return RedirectToLocal(returnUrl); // TODO: maybe something more descriptive that says "yes, we successfully added that external login bruh"
+                    }
                 }
+
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                {
+                    NoticeType = NoticeType.Error
+                });
             }
 
         }
@@ -401,29 +437,29 @@ namespace PwdLess.Controllers
 
             var createResult = await _userManager.CreateAsync(userEmpty);            
 
-            if (!createResult.Succeeded) // TODO: refactor?
+            if (createResult.Succeeded)
+            {
+                var addLoginResult = await _userManager.AddLoginAsync(userEmpty, loginInfo);
+                if (addLoginResult.Succeeded)
+                {
+                    // Success
+                    await _signInManager.SignInAsync(userEmpty, isPersistent: model.RememberMe);
+                    return RedirectToLocal(returnUrl);
+                }
+            }
+            else
             {
                 AddErrors(createResult);
                 return View("Register", model);
             }
 
 
-            var addLoginResult = await _userManager.AddLoginAsync(userEmpty, loginInfo);
+            await _userManager.DeleteAsync(userEmpty);
 
-            if (!addLoginResult.Succeeded)
+            return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
             {
-                await _userManager.DeleteAsync(userEmpty);
-
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Error
-                });
-            }
-
-            // Success
-            await _signInManager.SignInAsync(userEmpty, isPersistent: model.RememberMe);
-            return RedirectToLocal(returnUrl);
-
+                NoticeType = NoticeType.Error
+            });
         }
 
         [HttpPost]
