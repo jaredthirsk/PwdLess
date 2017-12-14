@@ -34,6 +34,7 @@ namespace PwdLess.Controllers
             _signInManager = signInManager;
             _logger = logger;
         }
+
         [HttpGet]
         public IActionResult Index()
         {
@@ -43,7 +44,7 @@ namespace PwdLess.Controllers
         [HttpGet]
         public async Task<IActionResult> EditUserInfo()
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User); // TODO: following code is repeated literally in every method here. Maybe use a filter?
             if (user == null)
             {
                 await _signInManager.SignOutAsync();
@@ -70,27 +71,29 @@ namespace PwdLess.Controllers
         public async Task<IActionResult> EditUserInfo(EditUserInfoViewModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                await _signInManager.SignOutAsync();
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                {
+                    NoticeType = NoticeType.Error
+                });
             }
+
             user.UserName = model.UserName;
             user.FavColor = model.FavColor;
-            
 
+            var email = _userManager.NormalizeKey(model.CommunicationEmail);
             var userLogins = await _userManager.GetLoginsAsync(user);
-            var commEmail = _userManager.NormalizeKey(model.CommunicationEmail);
-
+            
             if (user.EmailConfirmed &&
-                user.NormalizedEmail != commEmail &&
-                userLogins.FirstOrDefault(l => l.LoginProvider == "Email" && l.ProviderKey == commEmail) != null)
+                user.NormalizedEmail != email &&
+                userLogins.FirstOrDefault(l => l.LoginProvider == "Email" && l.ProviderKey == email) != null)
             {
-                user.Email = commEmail;
+                user.Email = email;
             }
 
             var updateResult = await _userManager.UpdateAsync(user);
@@ -99,12 +102,15 @@ namespace PwdLess.Controllers
             {
                 AddErrors(updateResult);
                 return View(model);
-                throw new ApplicationException($"Unexpected error occurred updating user with ID '{user.Id}'.");
             }
 
             await _signInManager.RefreshSignInAsync(user);
-            //StatusMessage = "Your profile has been updated";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+            {
+                NoticeType = NoticeType.Success,
+                Title = "Your profile has been updated.",
+                Description = " "
+            });
         }
 
         [HttpGet]
@@ -113,12 +119,14 @@ namespace PwdLess.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                await _signInManager.SignOutAsync();
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                {
+                    NoticeType = NoticeType.Error
+                });
             }
 
             var model = new LoginsViewModel { Logins = await _userManager.GetLoginsAsync(user) };
-
-            //model.StatusMessage = StatusMessage;
 
             return View(model);
         }
@@ -130,7 +138,11 @@ namespace PwdLess.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                await _signInManager.SignOutAsync();
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                {
+                    NoticeType = NoticeType.Error
+                });
             }
 
             var userLogins = await _userManager.GetLoginsAsync(user);
@@ -140,7 +152,12 @@ namespace PwdLess.Controllers
                 if (deleteResult.Succeeded)
                 {
                     await _signInManager.SignOutAsync();
-                    return RedirectToAction(nameof(HomeController.Index), "Home");
+                    return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                    {
+                        NoticeType = NoticeType.Success,
+                        Title = "Your account has been successfully deleted.", // TODO: better deletion than keeps account for n days
+                        Description = " "
+                    });
                 }
                 else
                 {
@@ -166,15 +183,22 @@ namespace PwdLess.Controllers
                 }
             }
 
-            var result = await _userManager.RemoveLoginAsync(user, model.LoginProvider, model.ProviderKey);
-            if (!result.Succeeded)
-            {
-                throw new ApplicationException($"Unexpected error occurred removing external login for user with ID '{user.Id}'.");
-            }
+            var removeLoginResult = await _userManager.RemoveLoginAsync(user, model.LoginProvider, model.ProviderKey);
+            if (!removeLoginResult.Succeeded)
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                {
+                    NoticeType = NoticeType.Error
+                });
 
             await _signInManager.SignInAsync(user, isPersistent: false);
-            //StatusMessage = "The external login was removed.";
-            return RedirectToAction(nameof(Logins));
+
+
+            return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+            {
+                NoticeType = NoticeType.Success,
+                Title = "Login successfully removed.",
+                Description = " "
+            });
         }
 
         #region Helpers
