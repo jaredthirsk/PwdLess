@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PwdLess.Models;
+using PwdLess.Models.HomeViewModels;
 using PwdLess.Models.ManageViewModels;
 
 namespace PwdLess.Controllers
@@ -108,11 +109,10 @@ namespace PwdLess.Controllers
                 throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
 
-            var model = new LoginsViewModel { CurrentLogins = await _userManager.GetLoginsAsync(user) };
-            model.OtherLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync())
-                .Where(auth => model.CurrentLogins.All(ul => auth.Name != ul.LoginProvider))
-                .ToList();
-            model.ShowRemoveButton = await _userManager.HasPasswordAsync(user) || model.CurrentLogins.Count > 1;
+            var model = new LoginsViewModel { Logins = await _userManager.GetLoginsAsync(user) };
+
+            model.ShowRemoveButton = model.Logins.Count > 1;
+
             //model.StatusMessage = StatusMessage;
 
             return View(model);
@@ -126,6 +126,28 @@ namespace PwdLess.Controllers
             if (user == null)
             {
                 throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+            }
+
+            var userLogins = await _userManager.GetLoginsAsync(user);
+            if (userLogins.Count <= 1)
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                {
+                    NoticeType = NoticeType.Error
+                });
+
+            if (model.LoginProvider == "Email")
+            {
+                if (user.Email == _userManager.NormalizeKey(model.ProviderKey))
+                {
+                    user.Email = userLogins.FirstOrDefault(l => l.LoginProvider == "Email").ProviderKey;
+                    user.EmailConfirmed = user.Email == null ? false : true;
+                    var updateResult = await _userManager.UpdateAsync(user);
+                    if (!updateResult.Succeeded)
+                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                        {
+                            NoticeType = NoticeType.Error
+                        });
+                }
             }
 
             var result = await _userManager.RemoveLoginAsync(user, model.LoginProvider, model.ProviderKey);

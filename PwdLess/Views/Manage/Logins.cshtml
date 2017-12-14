@@ -3,48 +3,56 @@
     ViewData["Title"] = "Manage your external logins";
 }
 
-@if (Model.CurrentLogins?.Count > 0)
-{
-<h4>Registered Logins</h4>
-<table class="table">
-    <tbody>
-        @foreach (var login in Model.CurrentLogins)
-            {
-        <tr>
-            <td>@login.LoginProvider</td>
-            <td>
-                @if (Model.ShowRemoveButton)
-                        {
-                <form asp-action="RemoveLogin" method="post">
-                    <div>
-                        <input asp-for="@login.LoginProvider" name="LoginProvider" type="hidden" />
-                        <input asp-for="@login.ProviderKey" name="ProviderKey" type="hidden" />
-                        <button type="submit" class="btn btn-default" title="Remove this @login.LoginProvider login from your account">Remove</button>
-                    </div>
-                </form>
-                        }
-                        else
-                        {
-                @: &nbsp;
-                        }
-            </td>
-        </tr>
-            }
-    </tbody>
-</table>
-}
-@if (Model.OtherLogins?.Count > 0)
-{
-<h4>Add another service to log in.</h4>
-<hr />
-<form asp-action="LinkLogin" method="post" class="form-horizontal">
-    <div id="socialLoginList">
-        <p>
-            @foreach (var provider in Model.OtherLogins)
-                {
-            <button type="submit" class="btn btn-default" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                }
-        </p>
+<div class="row">
+    <div class="column">
+        <h4 style="display:inline;">My existing logins</h4>
+        <a asp-controller="Account" asp-action="Login" class="button button-outline float-right">
+            <i class="fa fa-key" aria-hidden="true"></i>&nbsp;
+            Add more login methods
+        </a>
     </div>
-</form>
+</div>
+
+<br />
+
+@foreach (var login in Model.Logins)
+{
+    <div class="row">
+        <div class="column">
+            @login.LoginProvider
+
+            @if (login.LoginProvider == "Email")
+            {
+                <span>(@login.ProviderKey)</span>
+            }
+            else
+            {
+                <span>(@String.Concat(login.ProviderKey.Take(5).ToArray()))</span>
+            }
+
+        </div>
+        <div class="column">
+            @if (Model.ShowRemoveButton)
+            {
+                <form asp-action="RemoveLogin" method="post">
+                    <input asp-for="@login.LoginProvider" name="LoginProvider" type="hidden" />
+                    <input asp-for="@login.ProviderKey" name="ProviderKey" type="hidden" />
+                    <button type="submit" class="button button-clear"
+                            style="margin:0px;padding:0px;"
+                            title="Remove this @login.LoginProvider login from your account">
+                        <i class="fa fa-trash-o" aria-hidden="true"></i>&nbsp;
+                        Remove
+                    </button>
+                </form>
+            }
+            else
+            {
+                @: &nbsp; <em>This is your only login</em>
+            }
+        </div>
+    </div>
 }
+
+<br />
+
+

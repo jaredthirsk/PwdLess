@@ -9,15 +9,13 @@
     <div class="row">
         <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" class="column">
 
-            <a asp-area="" asp-controller="Home" asp-action="Index">Welcome @UserManager.GetUserName(User)!</a>
+            <a asp-area="" asp-controller="Home" asp-action="Index" style="font-size: 2rem;">Welcome, @UserManager.GetUserName(User)!</a>
 
             <button type="submit" class="button button-outline float-right">
                 <i class="fa fa-sign-out" aria-hidden="true"></i>&nbsp;
                 Log out
             </button>
-
         </form>
     </div>
-
 }
 

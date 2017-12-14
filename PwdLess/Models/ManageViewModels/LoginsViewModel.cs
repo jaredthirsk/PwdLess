@@ -10,9 +10,7 @@ namespace PwdLess.Models.ManageViewModels
 {
     public class LoginsViewModel
     {
-        public IList<UserLoginInfo> CurrentLogins { get; set; }
-
-        public IList<AuthenticationScheme> OtherLogins { get; set; }
+        public IList<UserLoginInfo> Logins { get; set; }
 
         public bool ShowRemoveButton { get; set; }
 
