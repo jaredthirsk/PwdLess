@@ -11,7 +11,5 @@ namespace PwdLess.Models.ManageViewModels
     public class LoginsViewModel
     {
         public IList<UserLoginInfo> Logins { get; set; }
-
-        public string StatusMessage { get; set; }
     }
 }

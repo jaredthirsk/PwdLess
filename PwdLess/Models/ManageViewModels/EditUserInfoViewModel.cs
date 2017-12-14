@@ -14,7 +14,5 @@ namespace PwdLess.Models.ManageViewModels
         [EmailAddress]
         [Display(Name = "Main email")]
         public string CommunicationEmail { get; set; }
-
-        public string StatusMessage { get; set; }
     }
 }

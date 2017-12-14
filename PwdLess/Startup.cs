@@ -74,7 +74,7 @@ namespace PwdLess
                        .EnableIntrospectionEndpoint("/connect/introspect")
                        .EnableUserinfoEndpoint("/api/userinfo");
                 options.AllowImplicitFlow();
-                if (Env.IsDevelopment())
+                if (!Env.IsDevelopment())
                 {
                     options.DisableHttpsRequirement();
                     options.AddEphemeralSigningKey();

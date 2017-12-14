@@ -46,7 +46,11 @@ namespace PwdLess.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                await _signInManager.SignOutAsync();
+                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                {
+                    NoticeType = NoticeType.Error
+                });
             }
 
             var model = new EditUserInfoViewModel
@@ -56,8 +60,6 @@ namespace PwdLess.Controllers
                 CommunicationEmail = user.EmailConfirmed ? user.Email : user.EmailFromExternalProvider,
 
                 FavColor = user.FavColor
-
-                //StatusMessage = StatusMessage
             };
 
             return View(model);
