@@ -12,8 +12,6 @@ namespace PwdLess.Models.ManageViewModels
     {
         public IList<UserLoginInfo> Logins { get; set; }
 
-        public bool ShowRemoveButton { get; set; }
-
         public string StatusMessage { get; set; }
     }
 }

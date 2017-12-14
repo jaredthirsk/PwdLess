@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Identity;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -6,19 +7,13 @@ using System.Threading.Tasks;
 
 namespace PwdLess.Models.ManageViewModels
 {
-    public class EditUserInfoViewModel
+    public class EditUserInfoViewModel : AdditionalUserInfo
     {
-        public string Username { get; set; }
+        public IList<UserLoginInfo> Logins { get; set; }
 
-        public bool IsEmailConfirmed { get; set; }
-
-        [Required]
         [EmailAddress]
-        public string Email { get; set; }
-
-        [Phone]
-        [Display(Name = "Phone number")]
-        public string PhoneNumber { get; set; }
+        [Display(Name = "Main email")]
+        public string CommunicationEmail { get; set; }
 
         public string StatusMessage { get; set; }
     }

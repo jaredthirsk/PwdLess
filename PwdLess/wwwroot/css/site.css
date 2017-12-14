@@ -29,6 +29,11 @@ a:focus, a:hover {
     color: #D81B60;
 }
 
+.button.button-clear:focus, .button.button-clear:hover, button.button-clear:focus {
+    color: #D81B60;
+}
+
+
 .button:focus, .button:hover, button:focus, button:hover {
     border-color: #D81B60;
     background-color: #D81B60;
@@ -55,5 +60,10 @@ a:focus, a:hover {
 }
 
 .fa {
-    font-size: 18px;
+    font-size: 1.8rem;
+}
+
+.validation-summary-errors * {
+    list-style: none;
+    font-size:  1.5rem;
 }

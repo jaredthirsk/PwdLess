@@ -3,40 +3,46 @@
     ViewData["Title"] = "Profile";
 }
 
-<h4>@ViewData["Title"]</h4>
 <div class="row">
-    <div class="col-md-6">
+    <div class="column">
+        <h3>My profile</h3>
+    </div>
+</div>
+
+<div class="row">
+    <div class="column">
         <form method="post">
             <div asp-validation-summary="All" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Username"></label>
-                <input asp-for="Username" class="form-control" disabled />
-            </div>
-            <div class="form-group">
-                <label asp-for="Email"></label>
-                @if (Model.IsEmailConfirmed)
-                {
-                <div class="input-group">
-                    <input asp-for="Email" class="form-control" />
-                    <span class="input-group-addon" aria-hidden="true"><span class="glyphicon glyphicon-ok text-success"></span></span>
-                </div>
-                }
-                else
-                {
-                <input asp-for="Email" class="form-control" />
-                <button asp-action="SendVerificationEmail" class="btn btn-link">Send verification email</button>
-                }
-                <span asp-validation-for="Email" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PhoneNumber"></label>
-                <input asp-for="PhoneNumber" class="form-control" />
-                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-default">Save</button>
+
+            <label asp-for="UserName"></label>
+            <input asp-for="UserName" class="form-control" />            
+
+            <label asp-for="CommunicationEmail"></label>
+            @if (Model.Logins?.FirstOrDefault(l => l.LoginProvider == "Email") != null)
+            {
+                <select asp-for="CommunicationEmail" asp-items=@Model.Logins.Where(l => l.LoginProvider == "Email").Select(l => new SelectListItem() { Text = l.ProviderKey.ToLower(), Value = l.ProviderKey, Selected = Model.CommunicationEmail.ToLower() == l.ProviderKey.ToLower() }) ></select>
+            }
+            else
+            {
+                <input asp-for="CommunicationEmail" type="hidden" value="@Model.CommunicationEmail" />
+                <em>@Model.CommunicationEmail?.ToLower()</em>
+                <a asp-controller="Account" asp-action="Login" class="button button-clear">
+                    Change by adding another email
+                </a>
+            }
+
+
+            <label asp-for="FavColor"></label>
+            <input asp-for="FavColor" class="form-control" />
+
+            <button type="submit" class="button">
+                <i class="fa fa-hdd-o" aria-hidden="true"></i>&nbsp;
+                Save
+            </button>
         </form>
     </div>
 </div>
+
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")

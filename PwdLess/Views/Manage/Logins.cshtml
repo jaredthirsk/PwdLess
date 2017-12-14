@@ -5,8 +5,8 @@
 
 <div class="row">
     <div class="column">
-        <h4 style="display:inline;">My existing logins</h4>
-        <a asp-controller="Account" asp-action="Login" class="button button-outline float-right">
+        <h3 style="display:inline;">My existing logins</h3>
+        <a asp-controller="Account" asp-action="Login" class="button button-clear float-right">
             <i class="fa fa-key" aria-hidden="true"></i>&nbsp;
             Add more login methods
         </a>
@@ -23,32 +23,37 @@
 
             @if (login.LoginProvider == "Email")
             {
-                <span>(@login.ProviderKey)</span>
+                <span>(@login.ProviderKey.ToLower().Substring(0, Math.Min(20, login.ProviderKey.Length)))</span>
             }
             else
             {
-                <span>(@String.Concat(login.ProviderKey.Take(5).ToArray()))</span>
+                <span>(@login.ProviderKey.Substring(0, Math.Min(5, login.ProviderKey.Length)))</span>
             }
 
         </div>
         <div class="column">
-            @if (Model.ShowRemoveButton)
-            {
-                <form asp-action="RemoveLogin" method="post">
-                    <input asp-for="@login.LoginProvider" name="LoginProvider" type="hidden" />
-                    <input asp-for="@login.ProviderKey" name="ProviderKey" type="hidden" />
+            <form asp-action="RemoveLogin" method="post">
+                <input asp-for="@login.LoginProvider" name="LoginProvider" type="hidden" />
+                <input asp-for="@login.ProviderKey" name="ProviderKey" type="hidden" />
+                @if (Model.Logins.Count > 1)
+                { 
                     <button type="submit" class="button button-clear"
                             style="margin:0px;padding:0px;"
                             title="Remove this @login.LoginProvider login from your account">
                         <i class="fa fa-trash-o" aria-hidden="true"></i>&nbsp;
                         Remove
                     </button>
-                </form>
-            }
-            else
-            {
-                @: &nbsp; <em>This is your only login</em>
-            }
+                }
+                else
+                {
+                    <button type="submit" class="button button-clear"
+                            style="margin:0px;padding:0px;"
+                            title="Permanently delete your account">
+                        <i class="fa fa-trash-o" aria-hidden="true"></i>&nbsp;
+                        Delete Account
+                    </button>
+                }
+            </form>
         </div>
     </div>
 }

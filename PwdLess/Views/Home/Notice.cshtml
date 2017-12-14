@@ -52,7 +52,13 @@
 
 <div class="row">
     <div class="column">
-        <button onclick="window.history.back();" class="button">Back</button>
-        <a asp-area="" asp-controller="Home" asp-action="Index" class="button float-right">Home</a>
+        <button onclick="window.history.back();" class="button button-outline">
+            <i class="fa fa-arrow-left" aria-hidden="true"></i>&nbsp;
+            Back
+        </button>
+        <a asp-area="" asp-controller="Home" asp-action="Index" class="button button-outline float-right">
+            <i class="fa fa-home" aria-hidden="true"></i>&nbsp;
+            Home
+        </a>
     </div>
 </div>

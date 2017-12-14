@@ -51,10 +51,12 @@ namespace PwdLess.Controllers
 
             var model = new EditUserInfoViewModel
             {
-                Username = user.UserName,
-                Email = user.Email,
-                PhoneNumber = user.PhoneNumber,
-                IsEmailConfirmed = user.EmailConfirmed,
+                UserName = user.UserName,
+                Logins = await _userManager.GetLoginsAsync(user),
+                CommunicationEmail = user.EmailConfirmed ? user.Email : user.EmailFromExternalProvider,
+
+                FavColor = user.FavColor
+
                 //StatusMessage = StatusMessage
             };
 
@@ -75,27 +77,30 @@ namespace PwdLess.Controllers
             {
                 throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
+            user.UserName = model.UserName;
+            user.FavColor = model.FavColor;
+            
 
-            var email = user.Email;
-            if (model.Email != email)
+            var userLogins = await _userManager.GetLoginsAsync(user);
+            var commEmail = _userManager.NormalizeKey(model.CommunicationEmail);
+
+            if (user.EmailConfirmed &&
+                user.NormalizedEmail != commEmail &&
+                userLogins.FirstOrDefault(l => l.LoginProvider == "Email" && l.ProviderKey == commEmail) != null)
             {
-                var setEmailResult = await _userManager.SetEmailAsync(user, model.Email);
-                if (!setEmailResult.Succeeded)
-                {
-                    throw new ApplicationException($"Unexpected error occurred setting email for user with ID '{user.Id}'.");
-                }
+                user.Email = commEmail;
             }
 
-            var phoneNumber = user.PhoneNumber;
-            if (model.PhoneNumber != phoneNumber)
+            var updateResult = await _userManager.UpdateAsync(user);
+            
+            if (!updateResult.Succeeded)
             {
-                var setPhoneResult = await _userManager.SetPhoneNumberAsync(user, model.PhoneNumber);
-                if (!setPhoneResult.Succeeded)
-                {
-                    throw new ApplicationException($"Unexpected error occurred setting phone number for user with ID '{user.Id}'.");
-                }
+                AddErrors(updateResult);
+                return View(model);
+                throw new ApplicationException($"Unexpected error occurred updating user with ID '{user.Id}'.");
             }
 
+            await _signInManager.RefreshSignInAsync(user);
             //StatusMessage = "Your profile has been updated";
             return RedirectToAction(nameof(Index));
         }
@@ -110,8 +115,6 @@ namespace PwdLess.Controllers
             }
 
             var model = new LoginsViewModel { Logins = await _userManager.GetLoginsAsync(user) };
-
-            model.ShowRemoveButton = model.Logins.Count > 1;
 
             //model.StatusMessage = StatusMessage;
 
@@ -130,16 +133,27 @@ namespace PwdLess.Controllers
 
             var userLogins = await _userManager.GetLoginsAsync(user);
             if (userLogins.Count <= 1)
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+            {
+                var deleteResult = await _userManager.DeleteAsync(user);
+                if (deleteResult.Succeeded)
                 {
-                    NoticeType = NoticeType.Error
-                });
+                    await _signInManager.SignOutAsync();
+                    return RedirectToAction(nameof(HomeController.Index), "Home");
+                }
+                else
+                {
+                    return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
+                    {
+                        NoticeType = NoticeType.Error
+                    });
+                }
+            }
 
             if (model.LoginProvider == "Email")
             {
-                if (user.Email == _userManager.NormalizeKey(model.ProviderKey))
+                if (user.NormalizedEmail == _userManager.NormalizeKey(model.ProviderKey))
                 {
-                    user.Email = userLogins.FirstOrDefault(l => l.LoginProvider == "Email").ProviderKey;
+                    user.Email = userLogins.FirstOrDefault(l => l.LoginProvider == "Email" && l.ProviderKey != model.ProviderKey)?.ProviderKey;
                     user.EmailConfirmed = user.Email == null ? false : true;
                     var updateResult = await _userManager.UpdateAsync(user);
                     if (!updateResult.Succeeded)

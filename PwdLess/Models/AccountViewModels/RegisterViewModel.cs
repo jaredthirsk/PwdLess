@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PwdLess.Models.AccountViewModels
 {
-    public class RegisterViewModel : IAdditionalUserInfo
+    public class RegisterViewModel : AdditionalUserInfo
     {
         public bool RememberMe { get; set; }
         public string Token { get; set; }
@@ -16,16 +16,6 @@ namespace PwdLess.Models.AccountViewModels
 
         [EmailAddress]
         public string EmailFromExternalProvider { get; set; }
-
-        [Required]
-        [Display(Name = "User name", Description = "Should be unique.")]
-        public string UserName { get; set; }
-
-        // From IAdditionalUserInfo        
-        [Display(Name = "Favourite Color")]
-        [Required]
-        [MaxLength(5)]
-        public string FavColor { get; set; }
 
     }
 }

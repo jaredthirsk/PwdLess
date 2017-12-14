@@ -15,10 +15,9 @@ namespace PwdLess.Models
 
         //public long DateCreated { get; set; }
 
+
         // from IAdditionalUserInfo
         public string FavColor { get; set; }
-
-
-
+        
     }
 }
