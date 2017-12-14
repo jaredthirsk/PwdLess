@@ -126,7 +126,7 @@ namespace PwdLess.Controllers
                     break;
             }
 
-            var callbackUrl = Url.TokenLoginLink(Request.Scheme, // TODO: make URL generation optional? It already is not supported with AddEmail
+            var callbackUrl = Url.TokenLoginLink(Request.Scheme, // TODO: make URL generation optional? It already is not supported with                                        ail
                 new TokenLoginViewModel
                 {
                     Token = token,
@@ -232,14 +232,12 @@ namespace PwdLess.Controllers
             }
             else // Trying to add email
             {
-                var emailToAdd = _userManager.NormalizeKey(model.Purpose);
-
-                var userWithConfirmedEmailToAdd = await _userManager.FindByLoginAsync("Email", emailToAdd);
+                var userWithConfirmedEmailToAdd = await _userManager.FindByLoginAsync("Email", email);
                 
                 if (userWithConfirmedEmailToAdd == null) // Email to be added never seen before, add email to userCurrentlySignedIn
                 {
                     var addLoginResult = await _userManager.AddLoginAsync(userCurrentlySignedIn, 
-                        new UserLoginInfo("Email", emailToAdd, "Email"));
+                        new UserLoginInfo("Email", email, "Email"));
 
                     if (!addLoginResult.Succeeded)
                         return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
@@ -247,7 +245,7 @@ namespace PwdLess.Controllers
                             NoticeType = NoticeType.Error
                         });
 
-                    userCurrentlySignedIn.Email = emailToAdd;
+                    userCurrentlySignedIn.Email = email;
                     userCurrentlySignedIn.EmailConfirmed = true;
                     var updateUserResult = await _userManager.UpdateAsync(userCurrentlySignedIn); // TODO: return success page instead of returning login page
 
@@ -275,7 +273,7 @@ namespace PwdLess.Controllers
                         {
                             NoticeType = NoticeType.Error,
                             Title = "This email is in another user's account.",
-                            Description = $"To add it to this account instead, login to {emailToAdd} then delete the account or add an alternative login method."
+                            Description = $"To add it to this account instead, login to {email} then delete the account or add an alternative login method."
                         });
                     }
                 }
@@ -394,8 +392,8 @@ namespace PwdLess.Controllers
             if (!ModelState.IsValid || (String.IsNullOrWhiteSpace(model.Email) ^ String.IsNullOrWhiteSpace(model.Email)))
                 return View("Register", model);
 
-            var email = _userManager.NormalizeKey(model.Email);
-
+            var email = _userManager.NormalizeKey(model.Email ?? model.EmailFromExternalProvider);
+            
             UserLoginInfo loginInfo = await _signInManager.GetExternalLoginInfoAsync();
 
             var userEmpty = new ApplicationUser()
@@ -408,7 +406,7 @@ namespace PwdLess.Controllers
 
             if (loginInfo == null) // User trying to register locally
             {
-                userEmpty.Id = email;
+                userEmpty.Id = email; // Is set to null a few lines later
                 userEmpty.Email = email;
                 userEmpty.EmailConfirmed = true;
 
@@ -434,12 +432,11 @@ namespace PwdLess.Controllers
             {
                 userEmpty.EmailFromExternalProvider = email;
             }
-
             var createResult = await _userManager.CreateAsync(userEmpty);            
 
             if (createResult.Succeeded)
             {
-                var addLoginResult = await _userManager.AddLoginAsync(userEmpty, loginInfo); // TODO: combine with CreateAsync above
+                var addLoginResult = await _userManager.AddLoginAsync(userEmpty, loginInfo);
 
                 if (addLoginResult.Succeeded)
                 {

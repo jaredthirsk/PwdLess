@@ -1,22 +1,59 @@
-﻿.container {
+﻿body {
+    color: #3F51B5;
+}
+
+.container {
     max-width: 60rem;
 }
 
-.main-pad {
-    padding-top: 15%;
+a:focus, a:hover {
+    color: #D81B60;
+}
+
+.button, button {
+    background-color: #9C27B0;
+    border-color: #9C27B0;
+}
+
+.button.button-clear, .button.button-outline {
+    background-color: transparent;
+    color: #9C27B0;
+}
+
+.button.button-clear {
+    border-color: transparent;
+}
+
+.button.button-outline:focus, .button.button-outline:hover, button.button-outline:focus, button.button-outline:hover {
+    border-color: #D81B60;
+    color: #D81B60;
+}
+
+.button:focus, .button:hover, button:focus, button:hover {
+    border-color: #D81B60;
+    background-color: #D81B60;
+}
+
+.main {
+    padding-top: 1%;
+    margin-top: 15%;
+    border: 1px dashed #F3E5F5;
+    border-radius: 5px;
+    box-shadow: 2px 2px 50px 0px rgba(222,222,222,0.62);
+}
+
+.text-warning {
+    color: #FF5722;
 }
 
 .text-danger {
-    color: red;
+    color: #f44336;
 }
 
 .text-success {
-    color: green;
+    color: #009688;
 }
 
-.center {
-    margin: auto;
-    width: 50%;
-    border: 3px solid green;
-    padding: 10px;
+.fa {
+    font-size: 18px;
 }

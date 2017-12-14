@@ -11,7 +11,10 @@
 
             <a asp-area="" asp-controller="Home" asp-action="Index">Welcome @UserManager.GetUserName(User)!</a>
 
-            <button type="submit" class="button button-outline float-right">Log out</button>
+            <button type="submit" class="button button-outline float-right">
+                <i class="fa fa-sign-out" aria-hidden="true"></i>&nbsp;
+                Log out
+            </button>
 
         </form>
     </div>

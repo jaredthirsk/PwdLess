@@ -100,7 +100,7 @@ namespace PwdLess.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ExternalLogins()
+        public async Task<IActionResult> Logins()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -108,7 +108,7 @@ namespace PwdLess.Controllers
                 throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
 
-            var model = new ExternalLoginsViewModel { CurrentLogins = await _userManager.GetLoginsAsync(user) };
+            var model = new LoginsViewModel { CurrentLogins = await _userManager.GetLoginsAsync(user) };
             model.OtherLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync())
                 .Where(auth => model.CurrentLogins.All(ul => auth.Name != ul.LoginProvider))
                 .ToList();
@@ -136,7 +136,7 @@ namespace PwdLess.Controllers
 
             await _signInManager.SignInAsync(user, isPersistent: false);
             //StatusMessage = "The external login was removed.";
-            return RedirectToAction(nameof(ExternalLogins));
+            return RedirectToAction(nameof(Logins));
         }
 
         #region Helpers

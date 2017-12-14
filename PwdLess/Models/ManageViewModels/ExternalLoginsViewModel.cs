@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace PwdLess.Models.ManageViewModels
 {
-    public class ExternalLoginsViewModel
+    public class LoginsViewModel
     {
         public IList<UserLoginInfo> CurrentLogins { get; set; }
 

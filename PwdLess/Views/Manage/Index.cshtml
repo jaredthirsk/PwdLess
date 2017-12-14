@@ -4,10 +4,26 @@
 
 <div class="row">
     <div class="column">
-        <a asp-controller="Manage" asp-action="EditUserInfo" class="button button-outline center">Edit your account</a>
-
-        <a asp-controller="Account" asp-action="Login" class="button button-outline center">Add another login method</a>
-
-        <a asp-controller="Manage" asp-action="ExternalLogins" class="button button-outline center">Remove an existing login method</a>
+        <a asp-controller="Manage" asp-action="EditUserInfo" class="button button-outline center">
+            <i class="fa fa-id-card-o" aria-hidden="true"></i>
+            &nbsp;
+            Edit your profile
+        </a>
+    </div>
+</div>
+<div class="row">
+    <div class="column">
+        <a asp-controller="Account" asp-action="Login" class="button button-outline center">
+            <i class="fa fa-key" aria-hidden="true"></i>&nbsp;
+            Add another login method
+        </a>
+    </div>
+</div>
+<div class="row">
+    <div class="column">
+        <a asp-controller="Manage" asp-action="Logins" class="button button-outline center">
+            <i class="fa fa-address-book-o" aria-hidden="true"></i>&nbsp;
+            Manage existing logins
+        </a>
     </div>
 </div>
