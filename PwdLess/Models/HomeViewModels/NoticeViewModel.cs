@@ -15,5 +15,7 @@ namespace PwdLess.Models.HomeViewModels
 
         [Display(Name = "Description")]
         public string Description { get; set; } = "Please try again later.";
+
+        public bool ShowBackButton { get; set; } = true;
     }
 }
