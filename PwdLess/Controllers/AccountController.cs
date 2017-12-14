@@ -271,7 +271,7 @@ namespace PwdLess.Controllers
                     {
                         return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
                         {
-                            NoticeType = NoticeType.Error,
+                            NoticeType = NoticeType.Warning,
                             Title = "This email is in another user's account.",
                             Description = $"To add it to this account instead, login to {email} then delete the account or add an alternative login method."
                         });
@@ -345,7 +345,8 @@ namespace PwdLess.Controllers
                         {
                             NoticeType = NoticeType.Warning,
                             Title = "This external login is already in your account.",
-                            Description = " "
+                            Description = " ",
+                            ShowBackButton = false
                         });
                     }
                     else
@@ -354,7 +355,8 @@ namespace PwdLess.Controllers
                         {
                             NoticeType = NoticeType.Warning,
                             Title = "This external login is in another user's account.",
-                            Description = $"To add it to this account instead, login to the other account then delete it or add an alternative login method."
+                            Description = $"To add it to this account instead, login to the other account then delete it or add an alternative login method.",
+                            ShowBackButton = false
                         });
                     }
                 }
