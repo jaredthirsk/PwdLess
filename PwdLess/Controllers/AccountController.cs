@@ -439,7 +439,8 @@ namespace PwdLess.Controllers
 
             if (createResult.Succeeded)
             {
-                var addLoginResult = await _userManager.AddLoginAsync(userEmpty, loginInfo);
+                var addLoginResult = await _userManager.AddLoginAsync(userEmpty, loginInfo); // TODO: combine with CreateAsync above
+
                 if (addLoginResult.Succeeded)
                 {
                     // Success

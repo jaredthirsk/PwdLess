@@ -1,0 +1,13 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="row">
+    <div class="column">
+        <a asp-controller="Manage" asp-action="EditUserInfo" class="button button-outline center">Edit your account</a>
+
+        <a asp-controller="Account" asp-action="Login" class="button button-outline center">Add another login method</a>
+
+        <a asp-controller="Manage" asp-action="ExternalLogins" class="button button-outline center">Remove an existing login method</a>
+    </div>
+</div>

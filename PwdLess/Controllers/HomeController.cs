@@ -23,8 +23,8 @@ namespace PwdLess.Controllers
         {
             if (!_signInManager.IsSignedIn(User))
                 return RedirectToAction(nameof(AccountController.Login), "Account");
-
-            return View();
+            else
+                return RedirectToAction(nameof(ManageController.Index), "Manage");
         }
 
         [HttpGet]
