@@ -16,7 +16,7 @@ namespace PwdLess.Models
     public class AdditionalUserInfo : IAdditionalUserInfo
     {
         [Required]
-        [Display(Name = "User name", Description = "Should be unique.")]
+        [Display(Name = "Username", Description = "Should be unique.")]
         public string UserName { get; set; }
 
         [Display(Name = "Favourite Color")]

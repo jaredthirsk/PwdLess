@@ -14,10 +14,28 @@
                 Welcome, @UserManager.GetUserName(User)!
             </a>
 
+
             <button type="submit" class="button button-clear float-right">
                 <i class="fa fa-sign-out" aria-hidden="true"></i>&nbsp;
                 Log out
             </button>
+            <span class="hide-on-mobile">
+                @if ((string)ViewData["Title"] == "Profile"){
+                    <a asp-controller="Manage" asp-action="Logins" class="button button-clear float-right">
+                        <i class="fa fa-address-book-o" aria-hidden="true"></i>
+                        &nbsp;
+                        My logins
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Manage" asp-action="EditUserInfo" class="button button-clear float-right">
+                        <i class="fa fa-id-card-o" aria-hidden="true"></i>
+                        &nbsp;
+                        Profile
+                    </a>
+                }
+            </span>
         </form>
     </div>
 }

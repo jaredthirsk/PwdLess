@@ -67,3 +67,14 @@ a:focus, a:hover {
     list-style: none;
     font-size:  1.5rem;
 }
+
+.hide-on-mobile{
+    display: none;
+    background-color: blue;
+}
+
+@media (min-width: 40.0rem) {
+    .hide-on-mobile{
+        display: inline;
+    }
+}

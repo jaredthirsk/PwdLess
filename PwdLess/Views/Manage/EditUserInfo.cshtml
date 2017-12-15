@@ -1,34 +1,46 @@
 ﻿@model EditUserInfoViewModel
 @{
-    ViewData["Title"] = "Profile";
+    ViewData["Title"] = "Profile"; // Used by _LoginPartial
 }
+
 
 <div class="row">
     <div class="column">
         <h3>My profile</h3>
-    </div>
-</div>
-
-<div class="row">
-    <div class="column">
         <form method="post">
             <div asp-validation-summary="All" class="text-danger"></div>
 
+            <input asp-for="Logins"  type="hidden" value="@Model.Logins" /> <!-- Doesn't actually send a list. You have to recompute. -->
+
             <label asp-for="UserName"></label>
-            <input asp-for="UserName" class="form-control" />            
+            <input asp-for="UserName" class="form-control" />
 
             <label asp-for="CommunicationEmail"></label>
-            @if (Model.Logins?.FirstOrDefault(l => l.LoginProvider == "Email") != null)
+            @if (Model.Logins.Where(l => l.LoginProvider == "Email").Count() > 1)
             {
                 <select asp-for="CommunicationEmail" asp-items=@Model.Logins.Where(l => l.LoginProvider == "Email").Select(l => new SelectListItem() { Text = l.ProviderKey.ToLower(), Value = l.ProviderKey, Selected = Model.CommunicationEmail.ToLower() == l.ProviderKey.ToLower() }) ></select>
             }
             else
             {
                 <input asp-for="CommunicationEmail" type="hidden" value="@Model.CommunicationEmail" />
-                <em>@Model.CommunicationEmail?.ToLower()</em>
-                <a asp-controller="Account" asp-action="Login" class="button button-clear">
-                    Change by adding another email
-                </a>
+                <em>@Model.CommunicationEmail.ToLower()</em>
+
+                @if (!Model.Logins.Any(l => l.LoginProvider == "Email"))
+                {
+                    <small class="text-danger">&nbsp;Unverified</small>
+                    <a asp-controller="Account" asp-action="Login" class="button button-clear">
+                        <i class="fa fa-envelope-o" aria-hidden="true" style="font-size:1.4rem;"></i>&nbsp;
+                        Change/Verify by adding an email
+                    </a>
+                }
+                else
+                { 
+                    <a asp-controller="Account" asp-action="Login" class="button button-clear">
+                        <i class="fa fa-envelope-o" aria-hidden="true" style="font-size:1.4rem;"></i>&nbsp;
+                        Change by adding an email
+                    </a>
+                }
+
             }
 
 

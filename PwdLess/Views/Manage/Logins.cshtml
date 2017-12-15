@@ -35,22 +35,22 @@
             <form asp-action="RemoveLogin" method="post">
                 <input asp-for="@login.LoginProvider" name="LoginProvider" type="hidden" />
                 <input asp-for="@login.ProviderKey" name="ProviderKey" type="hidden" />
-                @if (Model.Logins.Count > 1)
-                { 
-                    <button type="submit" class="button button-clear"
-                            style="margin:0px;padding:0px;"
-                            title="Remove this @login.LoginProvider login from your account">
-                        <i class="fa fa-trash-o" aria-hidden="true"></i>&nbsp;
-                        Remove
-                    </button>
-                }
-                else
+                @if (Model.Logins.Count == 1 || (String.IsNullOrWhiteSpace(Model.EmailFromExternalProvider) && Model.Logins.Where(l => l.LoginProvider == "Email").Count() == 1 && login.LoginProvider == "Email"))
                 {
                     <button type="submit" class="button button-clear"
                             style="margin:0px;padding:0px;"
                             title="Permanently delete your account">
                         <i class="fa fa-trash-o" aria-hidden="true"></i>&nbsp;
                         Delete Account
+                    </button>
+                }
+                else
+                {
+                    <button type="submit" class="button button-clear"
+                            style="margin:0px;padding:0px;"
+                            title="Remove this @login.LoginProvider login from your account">
+                        <i class="fa fa-trash-o" aria-hidden="true"></i>&nbsp;
+                        Remove
                     </button>
                 }
             </form>

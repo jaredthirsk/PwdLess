@@ -16,6 +16,10 @@
         @if (SignInManager.IsSignedIn(User))
         {
             <span>Add another login method</span>
+            <a asp-controller="Manage" asp-action="Logins" class="button button-clear float-right">
+                <i class="fa fa-address-book-o" aria-hidden="true"></i>&nbsp;
+                Manage existing
+            </a>
         }
         else
         {

@@ -70,9 +70,6 @@ namespace PwdLess.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUserInfo(EditUserInfoViewModel model)
         {
-            if (!ModelState.IsValid)
-                return View(model);
-
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
@@ -83,15 +80,21 @@ namespace PwdLess.Controllers
                 });
             }
 
-            user.UserName = model.UserName;
-            user.FavColor = model.FavColor;
-
             var email = _userManager.NormalizeKey(model.CommunicationEmail);
             var userLogins = await _userManager.GetLoginsAsync(user);
+
+            model.Logins = userLogins; //Model binding doesn't work with IList
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            user.UserName = model.UserName;
+            user.FavColor = model.FavColor;
+            
             
             if (user.EmailConfirmed &&
                 user.NormalizedEmail != email &&
-                userLogins.FirstOrDefault(l => l.LoginProvider == "Email" && l.ProviderKey == email) != null)
+                userLogins.Any(l => l.LoginProvider == "Email" && l.ProviderKey == email))
             {
                 user.Email = email;
             }
@@ -126,7 +129,11 @@ namespace PwdLess.Controllers
                 });
             }
 
-            var model = new LoginsViewModel { Logins = await _userManager.GetLoginsAsync(user) };
+            var model = new LoginsViewModel
+            {
+                Logins = await _userManager.GetLoginsAsync(user),
+                EmailFromExternalProvider = user.EmailFromExternalProvider
+            };
 
             return View(model);
         }
@@ -146,7 +153,8 @@ namespace PwdLess.Controllers
             }
 
             var userLogins = await _userManager.GetLoginsAsync(user);
-            if (userLogins.Count <= 1)
+            if (userLogins.Count == 1 ||
+               (String.IsNullOrWhiteSpace(user.EmailFromExternalProvider) && userLogins.Where(l => l.LoginProvider == "Email").Count() == 1 && model.LoginProvider == "Email"))
             {
                 var deleteResult = await _userManager.DeleteAsync(user);
                 if (deleteResult.Succeeded)
