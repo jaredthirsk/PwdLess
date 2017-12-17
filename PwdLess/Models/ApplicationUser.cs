@@ -7,8 +7,13 @@ using Microsoft.AspNetCore.Identity;
 
 namespace PwdLess.Models
 {
-    // Add profile data for application users by adding properties to the ApplicationUser class
-    public class ApplicationUser : IdentityUser, IAdditionalUserInfo
+    public class ApplicationUser : ApplicationUser<string>
+    {
+
+    }
+
+    public class ApplicationUser<TKey> : IdentityUser<TKey>, IAdditionalUserInfo
+        where TKey : IEquatable<TKey>
     {
         [EmailAddress]
         public string EmailFromExternalProvider { get; set; }

@@ -16,12 +16,12 @@ namespace PwdLess.Models
     public class AdditionalUserInfo : IAdditionalUserInfo
     {
         [Required]
+        [StringLength(15, MinimumLength = 4, ErrorMessage = "Your username should be between 4 and 15 characters in length.")]
         [Display(Name = "Username", Description = "Should be unique.")]
         public string UserName { get; set; }
 
         [Display(Name = "Favourite Color")]
-        [Required]
-        [MaxLength(5)]
+        [MinLength(2)]
         public string FavColor { get; set; }
     }
 }

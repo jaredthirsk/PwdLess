@@ -15,6 +15,9 @@ using System.Threading;
 using OpenIddict.Core;
 using OpenIddict.Models;
 using AspNet.Security.OpenIdConnect.Primitives;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace PwdLess
 {
@@ -52,6 +55,8 @@ namespace PwdLess
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
+
+
             services.AddAuthentication().AddGoogle(googleOptions =>
             {
                 googleOptions.ClientId = "1051315180916-6o8op8oebv3r5iq6avk22u17vqhhikbs.apps.googleusercontent.com";
@@ -74,20 +79,50 @@ namespace PwdLess
                        .EnableIntrospectionEndpoint("/connect/introspect")
                        .EnableUserinfoEndpoint("/api/userinfo");
                 options.AllowImplicitFlow();
-                if (Env.IsDevelopment())
+                if (!Env.IsDevelopment())
                 {
                     options.DisableHttpsRequirement();
                     options.AddEphemeralSigningKey();
                 }
                 else
                 {
+                    options.DisableHttpsRequirement();
+                    // Create the CspParameters object and set the key container name used to store the RSA key pair.  
+                    CspParameters cp = new CspParameters
+                    {
+                        KeyContainerName = "PwdLess1"
+                    };
+
+                    // Generate a public/private key pair.  
+                    RSACryptoServiceProvider RSA = new RSACryptoServiceProvider(2048, cp);
+
+                    // Save the public key information to an RSAParameters structure.  
+                    RSAParameters RSAKeyInfo = RSA.ExportParameters(true);
+
+                    options.AddSigningKey(new RsaSecurityKey(RSAKeyInfo));
+
                     // TODO research X509 & RSA Keys
                 }
                 options.UseJsonWebTokens();
             });
+            
+             services.AddAuthentication(options =>
+             {
+                 options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+             })
+            
+             .AddJwtBearer(options =>
+             {
+                 options.Authority = "http://localhost:54474/";
+                 options.Audience = "resource-server";
+                 options.RequireHttpsMetadata = false;
+                 options.TokenValidationParameters = new TokenValidationParameters
+                 {
+                     NameClaimType = OpenIdConnectConstants.Claims.Subject,
+                     RoleClaimType = OpenIdConnectConstants.Claims.Role
+                 };
+             });
 
-            services.AddAuthentication()
-                .AddOAuthValidation();
 
             //services.AddCors();
 

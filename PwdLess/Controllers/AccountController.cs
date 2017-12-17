@@ -247,7 +247,7 @@ namespace PwdLess.Controllers
 
                     userCurrentlySignedIn.Email = email;
                     userCurrentlySignedIn.EmailConfirmed = true;
-                    var updateUserResult = await _userManager.UpdateAsync(userCurrentlySignedIn); // TODO: return success page instead of returning login page
+                    var updateUserResult = await _userManager.UpdateAsync(userCurrentlySignedIn);
 
                     if (!updateUserResult.Succeeded)
                         return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
@@ -310,19 +310,24 @@ namespace PwdLess.Controllers
             if (info == null)
                 return RedirectToAction(nameof(Login));
 
+            var userWithExternalLogin = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
             var userCurrentlySignedIn = await _userManager.GetUserAsync(User);
+
 
             var emailFromExternalLoginProvider = _userManager.NormalizeKey(info.Principal.FindFirstValue(ClaimTypes.Email));
 
             if (userCurrentlySignedIn == null) // No locally signed-in user (trying to register or login)
             {
-                var externalLoginResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+                if (userWithExternalLogin != null) // User exists and attempting to login
+                {
+                    var externalLoginResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
 
-                if (externalLoginResult.Succeeded)
-                    return RedirectToLocal(returnUrl); // Success logging in
+                    if (externalLoginResult.Succeeded)
+                        return RedirectToLocal(returnUrl); // Success logging in
 
-                if (externalLoginResult.IsLockedOut || externalLoginResult.IsNotAllowed)
-                    return RedirectToAction(nameof(Lockout));
+                    if (externalLoginResult.IsLockedOut || externalLoginResult.IsNotAllowed)
+                        return RedirectToAction(nameof(Lockout));
+                }
                 
                 // The user does not have an account, is attempting to register
                 ViewData["ReturnUrl"] = returnUrl;
@@ -335,7 +340,6 @@ namespace PwdLess.Controllers
             }
             else // A user is currently locally signed-in (trying to add external login)
             {
-                var userWithExternalLogin = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
 
                 if (userWithExternalLogin != null) // External login already in use
                 {
@@ -371,7 +375,7 @@ namespace PwdLess.Controllers
                     {
                         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme); // Clear the existing external cookie to ensure a clean login process
 
-                        return RedirectToLocal(returnUrl); // TODO: maybe something more descriptive that says "yes, we successfully added that external login bruh"
+                        return RedirectToLocal(returnUrl);
                     }
                 }
 

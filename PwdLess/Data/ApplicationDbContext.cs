@@ -2,15 +2,27 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PwdLess.Models;
 
 namespace PwdLess.Data
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    public class ApplicationDbContext : ApplicationDbContext<string>
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext<string>> options) : base(options)
+        {
+        }
+    }
+
+    // Customise generic types here
+    public class ApplicationDbContext<TKey> : IdentityDbContext<ApplicationUser<TKey>, IdentityRole<TKey>, TKey>
+        where TKey : IEquatable<TKey>
+    {
+        public DbSet<AuthEvent> AuthEvents;
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext<TKey>> options)
             : base(options)
         {
         }
