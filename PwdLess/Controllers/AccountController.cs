@@ -126,7 +126,7 @@ namespace PwdLess.Controllers
                     break;
             }
 
-            var callbackUrl = Url.TokenLoginLink(Request.Scheme, // TODO: make URL generation optional? It already is not supported with                                        ail
+            var callbackUrl = Url.TokenLoginLink(Request.Scheme,
                 new TokenLoginViewModel
                 {
                     Token = token,
@@ -138,7 +138,7 @@ namespace PwdLess.Controllers
 
             await _emailSender.SendTokenAsync(email, attemptedOperation, callbackUrl, token);
 
-            return RedirectToAction(nameof(TokenLoginManual), 
+            return RedirectToAction(nameof(TokenInputManual), 
                 new TokenLoginViewModel
                 {
                     RememberMe = model.RememberMe,
@@ -151,13 +151,13 @@ namespace PwdLess.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult TokenLoginManual(TokenLoginViewModel model)
+        public IActionResult TokenInputManual(TokenLoginViewModel model)
         {
             return View(model);
         }
 
         [HttpGet]
-        [AllowAnonymous] // TODO: maybe make this into a HttpPost with ValidateAntiforgeryToken and disable url (only manual)
+        [AllowAnonymous]
         public async Task<IActionResult> TokenLogin(TokenLoginViewModel model)
         {
 
@@ -195,6 +195,12 @@ namespace PwdLess.Controllers
             }
             else // Trying to add email
             {
+                if (userCurrentlySignedIn == null) // If the user is not signed in, prompt them to, then let them back here
+                    return RedirectToAction(nameof(Login), new
+                    {
+                        returnUrl = Request.Path + Request.QueryString
+                    });
+
                 isTokenValid = await _userManager.VerifyUserTokenAsync(
                     userCurrentlySignedIn,
                     "Email", model.Purpose, model.Token);

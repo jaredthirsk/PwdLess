@@ -76,7 +76,7 @@
         <h4>Or an external login...</h4>
 
         <div class="row">
-            <form asp-action="@nameof(AccountController.ExternalLoginAsync)" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
+            <form asp-action="@nameof(AccountController.ExternalLoginAsync)" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" class="column">
                 <div>
                     <p>
                         @foreach (var provider in loginProviders)

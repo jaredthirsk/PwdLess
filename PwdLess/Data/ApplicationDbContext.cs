@@ -9,20 +9,11 @@ using PwdLess.Models;
 
 namespace PwdLess.Data
 {
-    public class ApplicationDbContext : ApplicationDbContext<string>
-    {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext<string>> options) : base(options)
-        {
-        }
-    }
-
-    // Customise generic types here
-    public class ApplicationDbContext<TKey> : IdentityDbContext<ApplicationUser<TKey>, IdentityRole<TKey>, TKey>
-        where TKey : IEquatable<TKey>
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public DbSet<AuthEvent> AuthEvents;
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext<TKey>> options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }

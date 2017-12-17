@@ -1,9 +1,8 @@
 @using Microsoft.AspNetCore.Identity
-@using PwdLess.Services
 @using PwdLess.Models
 
 @inject SignInManager<ApplicationUser> SignInManager
-@inject ApplicationUserManager UserManager
+@inject UserManager<ApplicationUser> UserManager
 
 @if (SignInManager.IsSignedIn(User))
 {

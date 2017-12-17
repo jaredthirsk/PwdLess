@@ -25,7 +25,8 @@ namespace PwdLess.Services
                     break;
                 case AuthOperation.AddingNovelEmail:
                     subject = "Add this email to your account";
-                    message = $"To add this email to your account, please use this code: {token}";
+                    message = $"To add this email to your account, please click this link: <a href='{link}'>link</a>" +
+                        $"Alternatively, use this code: {token}";
                     break;
                 case AuthOperation.Registering:
                     subject = "Create your account";

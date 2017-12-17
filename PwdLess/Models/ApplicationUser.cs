@@ -7,13 +7,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace PwdLess.Models
 {
-    public class ApplicationUser : ApplicationUser<string>
-    {
-
-    }
-
-    public class ApplicationUser<TKey> : IdentityUser<TKey>, IAdditionalUserInfo
-        where TKey : IEquatable<TKey>
+    public class ApplicationUser : IdentityUser, IAdditionalUserInfo
     {
         [EmailAddress]
         public string EmailFromExternalProvider { get; set; }

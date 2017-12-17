@@ -79,7 +79,7 @@ namespace PwdLess
                        .EnableIntrospectionEndpoint("/connect/introspect")
                        .EnableUserinfoEndpoint("/api/userinfo");
                 options.AllowImplicitFlow();
-                if (!Env.IsDevelopment())
+                if (Env.IsDevelopment())
                 {
                     options.DisableHttpsRequirement();
                     options.AddEphemeralSigningKey();
@@ -126,8 +126,17 @@ namespace PwdLess
 
             //services.AddCors();
 
-            services.AddTransient<IEmailSender, AuthMessageSender>();
-            services.AddTransient<ISmsSender, AuthMessageSender>();
+            if (Env.IsDevelopment())
+            {
+                services.AddTransient<IEmailSender, DevMessageSender>();
+                services.AddTransient<ISmsSender, DevMessageSender>();
+            }
+            else
+            {
+                services.AddTransient<IEmailSender, MailKitMessageSender>();
+            }
+
+            
 
         }
 
