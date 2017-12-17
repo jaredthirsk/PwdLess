@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace PwdLess.Models.HomeViewModels
+﻿namespace PwdLess.Models.HomeViewModels
 {
     public enum NoticeType
     {

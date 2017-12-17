@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace PwdLess.Models
+﻿namespace PwdLess.Models
 {
     public enum AuthOperation
     {

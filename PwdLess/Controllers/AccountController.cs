@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PwdLess.Filters;
 using PwdLess.Models;
 using PwdLess.Models.AccountViewModels;
 using PwdLess.Models.HomeViewModels;
@@ -17,17 +19,20 @@ namespace PwdLess.Controllers
     [Route("[controller]/[action]")]
     public class AccountController : Controller
     {
+        private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IEmailSender _emailSender;
         private readonly ILogger _logger;
 
         public AccountController(
+            IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             IEmailSender emailSender,
             ILogger<AccountController> logger)
         {
+            _configuration = configuration;
             _userManager = userManager;
             _signInManager = signInManager;
             _emailSender = emailSender;
@@ -126,8 +131,8 @@ namespace PwdLess.Controllers
                     break;
             }
 
-            var callbackUrl = Url.TokenLoginLink(Request.Scheme,
-                new TokenLoginViewModel
+            var callbackUrl = Url.TokenInputLink(Request.Scheme,
+                new TokenInputViewModel
                 {
                     Token = token,
                     RememberMe = model.RememberMe,
@@ -138,8 +143,8 @@ namespace PwdLess.Controllers
 
             await _emailSender.SendTokenAsync(email, attemptedOperation, callbackUrl, token);
 
-            return RedirectToAction(nameof(TokenInputManual), 
-                new TokenLoginViewModel
+            return RedirectToAction(nameof(TokenInput), 
+                new TokenInputViewModel
                 {
                     RememberMe = model.RememberMe,
                     ReturnUrl = returnUrl,
@@ -151,17 +156,20 @@ namespace PwdLess.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult TokenInputManual(TokenLoginViewModel model)
-        {
+        public IActionResult TokenInput(TokenInputViewModel model)
+        {   
             return View(model);
         }
 
-        [HttpGet]
+        [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> TokenLogin(TokenLoginViewModel model)
+        [ValidateAntiForgeryToken]
+        [ActionName("TokenInput")]
+        [ServiceFilter(typeof(ValidateRecaptchaAttribute))]
+        public async Task<IActionResult> SubmitToken(TokenInputViewModel model)
         {
-
-            if (String.IsNullOrWhiteSpace(model.Email) ||
+            if (!ModelState.IsValid ||
+                String.IsNullOrWhiteSpace(model.Email) ||
                 String.IsNullOrWhiteSpace(model.Purpose) ||
                 String.IsNullOrWhiteSpace(model.Token))
             {
@@ -397,11 +405,12 @@ namespace PwdLess.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RegisterConfirmation(RegisterViewModel model, string returnUrl = null)
+        public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            if (!ModelState.IsValid || (String.IsNullOrWhiteSpace(model.Email) ^ String.IsNullOrWhiteSpace(model.Email)))
+            if (!ModelState.IsValid || 
+                (String.IsNullOrWhiteSpace(model.Email) ^ String.IsNullOrWhiteSpace(model.Email)))
                 return View("Register", model);
 
             var email = _userManager.NormalizeKey(model.Email ?? model.EmailFromExternalProvider);
@@ -411,6 +420,7 @@ namespace PwdLess.Controllers
             var userEmpty = new ApplicationUser()
             {
                 UserName = model.UserName,
+                DateCreated = DateTimeOffset.UtcNow,
                 SecurityStamp = "",
 
                 FavColor = model.FavColor,

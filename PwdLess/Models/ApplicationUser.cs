@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 
 namespace PwdLess.Models
@@ -12,11 +9,9 @@ namespace PwdLess.Models
         [EmailAddress]
         public string EmailFromExternalProvider { get; set; }
 
-        //public long DateCreated { get; set; }
-
+        public DateTimeOffset DateCreated { get; set; }
 
         // from IAdditionalUserInfo
         public string FavColor { get; set; }
-        
     }
 }

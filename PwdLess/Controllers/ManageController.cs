@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using PwdLess.Models;
 using PwdLess.Models.HomeViewModels;
 using PwdLess.Models.ManageViewModels;
@@ -20,16 +17,19 @@ namespace PwdLess.Controllers
     [Route("[controller]/[action]")]
     public class ManageController : Controller
     {
+        private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger _logger;
 
         public ManageController(
+          IConfiguration configuration,
           UserManager<ApplicationUser> userManager,
           SignInManager<ApplicationUser> signInManager,
           ILogger<ManageController> logger,
           UrlEncoder urlEncoder)
         {
+            _configuration = configuration;
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;

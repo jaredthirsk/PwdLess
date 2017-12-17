@@ -18,6 +18,7 @@ using AspNet.Security.OpenIdConnect.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using PwdLess.Filters;
 
 namespace PwdLess
 {
@@ -32,7 +33,6 @@ namespace PwdLess
         public IConfiguration Configuration { get; }
         public IHostingEnvironment Env { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
 
@@ -41,9 +41,9 @@ namespace PwdLess
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 if (Env.IsDevelopment())
-                    options.UseSqlServer(Configuration["Data:TestConnection"]);
+                    options.UseSqlServer(Configuration["ConnectionStrings:DefaultConnection"]);
                 else
-                    options.UseSqlServer(Configuration["Data:DefaultConnection"]);
+                    options.UseSqlServer(Configuration["ConnectionStrings:DefaultConnection"]);
 
                 options.UseOpenIddict();
             });
@@ -55,13 +55,14 @@ namespace PwdLess
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-
-
-            services.AddAuthentication().AddGoogle(googleOptions =>
+            if (!String.IsNullOrWhiteSpace(Configuration["ExternalAuth:Google:ClientId"]))
             {
-                googleOptions.ClientId = "1051315180916-6o8op8oebv3r5iq6avk22u17vqhhikbs.apps.googleusercontent.com";
-                googleOptions.ClientSecret = "_g14axZJ-ndWc_CZ3foLQKq7";
-            });
+                services.AddAuthentication().AddGoogle(googleOptions =>
+                {
+                    googleOptions.ClientId = Configuration["ExternalAuth:Google:ClientId"];
+                    googleOptions.ClientSecret = Configuration["ExternalAuth:Google:ClientSecret"];
+                });
+            }
 
             services.Configure<IdentityOptions>(options =>
             {
@@ -105,24 +106,11 @@ namespace PwdLess
                 }
                 options.UseJsonWebTokens();
             });
-            
-             services.AddAuthentication(options =>
-             {
-                 options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-             })
-            
-             .AddJwtBearer(options =>
-             {
-                 options.Authority = "http://localhost:54474/";
-                 options.Audience = "resource-server";
-                 options.RequireHttpsMetadata = false;
-                 options.TokenValidationParameters = new TokenValidationParameters
-                 {
-                     NameClaimType = OpenIdConnectConstants.Claims.Subject,
-                     RoleClaimType = OpenIdConnectConstants.Claims.Role
-                 };
-             });
 
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            });
 
             //services.AddCors();
 
@@ -136,11 +124,9 @@ namespace PwdLess
                 services.AddTransient<IEmailSender, MailKitMessageSender>();
             }
 
-            
-
+            services.AddScoped<ValidateRecaptchaAttribute>();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -187,17 +173,6 @@ namespace PwdLess
                         DisplayName = "Client App",
                         PostLogoutRedirectUris = { new Uri("http://localhost:8000/signout-oidc") },
                         RedirectUris = { new Uri("http://localhost:8000/signin-oidc") },
-                    };
-
-                    await manager.CreateAsync(descriptor, cancellationToken);
-                }
-
-                if (await manager.FindByClientIdAsync("resource-server", cancellationToken) == null)
-                {
-                    var descriptor = new OpenIddictApplicationDescriptor
-                    {
-                        ClientId = "resource-server",
-                        ClientSecret = "846B62D0-DEF9-4215-A99D-86E6B8DAB342"
                     };
 
                     await manager.CreateAsync(descriptor, cancellationToken);

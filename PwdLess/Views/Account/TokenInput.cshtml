@@ -1,8 +1,10 @@
-﻿@{
+﻿@using Microsoft.Extensions.Configuration;
+@{
     ViewData["Title"] = "Your code has been sent.";
 }
 
-@model TokenLoginViewModel
+@inject IConfiguration Configuration
+@model TokenInputViewModel
 
 <div class="row">
     <div class="column">
@@ -15,8 +17,7 @@
 
 
 <div class="row">
-    <form asp-controller="Account" asp-action="TokenLogin" method="get" role="form" class="column">
-
+    <form id="main-form" method="post" role="form" class="column">
         <div asp-validation-summary="All" class="text-danger"></div>
 
         <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />
@@ -28,7 +29,9 @@
         <label asp-for="Token"></label>
         <input asp-for="Token" />
 
-        <button type="submit" class="button button-primary">
+        <button type="submit" class="button button-primary g-recaptcha"
+                data-sitekey="@Configuration["Recaptcha:SiteKey"]"
+                data-callback="onSubmit">
             <i class="fa fa-key" aria-hidden="true"></i>&nbsp;
             Check Code
         </button>
@@ -37,5 +40,13 @@
 
 </div>
 @section Scripts {
+    <script src='https://www.google.com/recaptcha/api.js'></script>
+
+    <script>
+        function onSubmit(token) {
+            document.getElementById("main-form").submit();
+        }
+    </script>
+
     @await Html.PartialAsync("_ValidationScriptsPartial")
 }

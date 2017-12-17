@@ -1,11 +1,4 @@
-﻿/*
- * Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
- * See https://github.com/openiddict/openiddict-core for more information concerning
- * the license and the contributors participating to this project.
- */
-
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AspNet.Security.OpenIdConnect.Extensions;
@@ -18,20 +11,28 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using OpenIddict.Core;
 using PwdLess.Models.HomeViewModels;
+using Microsoft.Extensions.Configuration;
+
+/*
+ *  This code is adapted from OpenIddict, which is licensed under Apache 2.0 
+ */
 
 namespace PwdLess.Controllers
 {
     public class AuthorizationController : Controller
     {
+        private readonly IConfiguration _configuration;
         private readonly IOptions<IdentityOptions> _identityOptions;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
 
         public AuthorizationController(
+            IConfiguration configuration,
             IOptions<IdentityOptions> identityOptions,
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager)
         {
+            _configuration = configuration;
             _identityOptions = identityOptions;
             _signInManager = signInManager;
             _userManager = userManager;
@@ -40,10 +41,6 @@ namespace PwdLess.Controllers
         [HttpGet("~/connect/authorize")]
         public async Task<IActionResult> Authorize(OpenIdConnectRequest request)
         {
-            Debug.Assert(request.IsAuthorizationRequest(),
-                "The OpenIddict binder for ASP.NET Core MVC is not registered. " +
-                "Make sure services.AddOpenIddict().AddMvcBinders() is correctly called.");
-
             if (!User.Identity.IsAuthenticated)
             {
                 // If the client application request promptless authentication,
@@ -71,7 +68,6 @@ namespace PwdLess.Controllers
                 {
                     NoticeType = NoticeType.Error,
                     Title = OpenIdConnectConstants.Errors.ServerError,
-                    Description = "An internal error has occurred"
                 });
             }
 
@@ -114,8 +110,6 @@ namespace PwdLess.Controllers
                 OpenIdConnectConstants.Scopes.Profile,
                 OpenIddictConstants.Scopes.Roles
             }.Intersect(request.GetScopes()));
-
-            ticket.SetResources("resource-server");
 
             // Note: by default, claims are NOT automatically included in the access and identity tokens.
             // To allow OpenIddict to serialize them, you must attach them a destination, that specifies

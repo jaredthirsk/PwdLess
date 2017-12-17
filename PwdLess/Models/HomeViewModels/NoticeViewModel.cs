@@ -1,9 +1,8 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace PwdLess.Models.HomeViewModels
 {
-    public class NoticeViewModel // Can be an error, a warning, or a success
+    public class NoticeViewModel
     {
         public NoticeType NoticeType { get; set; }
 

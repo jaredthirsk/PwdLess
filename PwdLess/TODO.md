@@ -6,4 +6,14 @@
 - [ ] 60 day delay on deletion
 - [ ] Implement AuthEvents (AuthEvent.cs)
 	solving the problem of 'how would I know if my account got compromised?'
-- [ ] Refactor auth controller
+- [ ] maybe redistribute claims across access/id tokens?
+- [ ] add logging
+- [ ] go through & comment ManageController
+- [ ] write a test suite
+- [ ] use github trello clone
+- [ ] docs
+- [ ] reearch cors
+- [ ] research mail sending for production
+	maybe implement mailkit mailsender
+- [ ] user lockout
+- [ ] setup config auto reload

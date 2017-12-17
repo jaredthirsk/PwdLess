@@ -32,7 +32,7 @@
 
         </div>
         <div class="column">
-            <form asp-action="RemoveLogin" method="post">
+            <form asp-action="@nameof(ManageController.RemoveLogin)" method="post">
                 <input asp-for="@login.LoginProvider" name="LoginProvider" type="hidden" />
                 <input asp-for="@login.ProviderKey" name="ProviderKey" type="hidden" />
                 @if (Model.Logins.Count == 1 || (String.IsNullOrWhiteSpace(Model.EmailFromExternalProvider) && Model.Logins.Where(l => l.LoginProvider == "Email").Count() == 1 && login.LoginProvider == "Email"))
