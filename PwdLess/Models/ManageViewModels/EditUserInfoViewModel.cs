@@ -12,6 +12,8 @@ namespace PwdLess.Models.ManageViewModels
         [Required]
         [EmailAddress]
         [Display(Name = "Main email")]
-        public string PrimaryEmail { get; set; }
+        public string Email { get; set; }
+
+        public bool EmailConfirmed { get; set; }
     }
 }

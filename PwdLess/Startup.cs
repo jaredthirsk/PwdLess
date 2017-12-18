@@ -19,6 +19,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using PwdLess.Filters;
+using Microsoft.AspNetCore.Http;
 
 namespace PwdLess
 {
@@ -124,9 +125,13 @@ namespace PwdLess
                 services.AddTransient<IEmailSender, MailKitMessageSender>();
             }
 
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
             services.AddScoped<ValidateRecaptchaAttribute>();
 
-            services.AddTransient<NoticeService>();
+            services.AddScoped<NoticeService>();
+
+            services.AddScoped<EventsService>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

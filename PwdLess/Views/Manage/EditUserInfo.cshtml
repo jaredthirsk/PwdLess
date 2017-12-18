@@ -15,17 +15,17 @@
             <label asp-for="UserName"></label>
             <input asp-for="UserName" class="form-control" />
 
-            <label asp-for="PrimaryEmail"></label>
+            <label asp-for="Email"></label>
             @if (Model.Logins.Where(l => l.LoginProvider == "Email").Count() > 1)
             {
-                <select asp-for="PrimaryEmail" asp-items=@Model.Logins.Where(l => l.LoginProvider == "Email").Select(l => new SelectListItem() { Text = l.ProviderKey.ToLower(), Value = l.ProviderKey, Selected = Model.PrimaryEmail.ToLower() == l.ProviderKey.ToLower() }) ></select>
+                <select asp-for="Email" asp-items=@Model.Logins.Where(l => l.LoginProvider == "Email").Select(l => new SelectListItem() { Text = l.ProviderKey.ToLower(), Value = l.ProviderKey, Selected = Model.Email.ToLower() == l.ProviderKey.ToLower() }) ></select>
             }
             else
             {
-                <input asp-for="PrimaryEmail" type="hidden" value="@Model.PrimaryEmail" />
-                <em>@Model.PrimaryEmail.ToLower()</em>
+                <input asp-for="Email" type="hidden" value="@Model.Email" />
+                <em>@Model.Email.ToLower()</em>
 
-                @if (!Model.Logins.Any(l => l.LoginProvider == "Email"))
+                @if (!Model.EmailConfirmed)
                 {
                     <small class="text-danger">&nbsp;Unverified</small>
                     <a asp-controller="Account" asp-action="Login" class="button button-clear">

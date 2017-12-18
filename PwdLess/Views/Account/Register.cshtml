@@ -7,18 +7,18 @@
 <div class="row">
     <div class="column">
         <h3>Just one more thing!</h3>
-        @if (String.IsNullOrWhiteSpace(Model.ExternalLoginProvider))
+        @if (String.IsNullOrWhiteSpace(Model.ExternalLoginProviderDisplayName))
         {
             @:Fill out the following to complete your registration.
         }
         else
         {
-            @:Fill out the following to complete your registeration with @Model.ExternalLoginProvider.
+            @:Fill out the following to complete your registeration with @Model.ExternalLoginProviderDisplayName.
                 
-            @if (!String.IsNullOrWhiteSpace(Model.EmailFromExternalProvider))
+            @if (!String.IsNullOrWhiteSpace(Model.Email))
             {
                 <br />
-                <small><em>(Email: @Model.EmailFromExternalProvider.ToLower())</em></small>
+                <small><em>(Email: @Model.Email.ToLower())</em></small>
             }
         }
     </div>
@@ -29,10 +29,10 @@
         <form method="post" asp-action="@nameof(AccountController.Register)">
 
             <input asp-for="Email" type="hidden" value="@Model.Email" />
-            <input asp-for="EmailFromExternalProvider" type="hidden" value="@Model.EmailFromExternalProvider" />
             <input asp-for="ReturnUrl" type="hidden" value="@Model.ReturnUrl" />
             <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />
             <input asp-for="Token" type="hidden" value="@Model.Token" />
+            <input asp-for="Email" type="hidden" value="@Model.Email" />
 
 
             <div asp-validation-summary="All" class="text-danger"></div>

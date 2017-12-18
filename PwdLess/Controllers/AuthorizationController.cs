@@ -4,15 +4,14 @@ using System.Threading.Tasks;
 using AspNet.Security.OpenIdConnect.Extensions;
 using AspNet.Security.OpenIdConnect.Primitives;
 using AspNet.Security.OpenIdConnect.Server;
-using PwdLess.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using OpenIddict.Core;
-using PwdLess.Models.HomeViewModels;
 using Microsoft.Extensions.Configuration;
 using PwdLess.Services;
+using PwdLess.Data;
 
 /*
  *  This code is adapted from OpenIddict, which is licensed under Apache 2.0 

@@ -10,10 +10,7 @@ namespace PwdLess.Models.AccountViewModels
         [EmailAddress]
         public string Email { get; set; }
 
-        [EmailAddress]
-        public string EmailFromExternalProvider { get; set; }
-
-        public string ExternalLoginProvider { get; set; }
+        public string ExternalLoginProviderDisplayName { get; set; }
 
         public string ReturnUrl { get; set; }
 

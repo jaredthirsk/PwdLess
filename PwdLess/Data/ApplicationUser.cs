@@ -1,14 +1,12 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
+using PwdLess.Models;
 
-namespace PwdLess.Models
+namespace PwdLess.Data
 {
     public class ApplicationUser : IdentityUser, IAdditionalUserInfo
     {
-        [EmailAddress]
-        public string EmailFromExternalProvider { get; set; }
-
         public DateTimeOffset DateCreated { get; set; }
 
         // from IAdditionalUserInfo

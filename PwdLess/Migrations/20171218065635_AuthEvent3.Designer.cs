@@ -11,8 +11,8 @@ using System;
 namespace PwdLess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20171214003708_Init")]
-    partial class Init
+    [Migration("20171218065635_AuthEvent3")]
+    partial class AuthEvent3
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -250,7 +250,7 @@ namespace PwdLess.Migrations
                     b.ToTable("OpenIddictTokens");
                 });
 
-            modelBuilder.Entity("PwdLess.Models.ApplicationUser", b =>
+            modelBuilder.Entity("PwdLess.Data.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .ValueGeneratedOnAdd();
@@ -259,6 +259,8 @@ namespace PwdLess.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken();
+
+                    b.Property<DateTimeOffset>("DateCreated");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256);
@@ -305,6 +307,30 @@ namespace PwdLess.Migrations
                     b.ToTable("AspNetUsers");
                 });
 
+            modelBuilder.Entity("PwdLess.Data.AuthEvent", b =>
+                {
+                    b.Property<string>("AuthEventId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("ApplicationUserId");
+
+                    b.Property<string>("ClientIPAddress");
+
+                    b.Property<string>("ClientUserAgent");
+
+                    b.Property<DateTimeOffset>("OccurrenceTime");
+
+                    b.Property<string>("Subject");
+
+                    b.Property<int>("Type");
+
+                    b.HasKey("AuthEventId");
+
+                    b.HasIndex("ApplicationUserId");
+
+                    b.ToTable("AuthEvents");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole")
@@ -315,7 +341,7 @@ namespace PwdLess.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("PwdLess.Models.ApplicationUser")
+                    b.HasOne("PwdLess.Data.ApplicationUser")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -323,7 +349,7 @@ namespace PwdLess.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("PwdLess.Models.ApplicationUser")
+                    b.HasOne("PwdLess.Data.ApplicationUser")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -336,7 +362,7 @@ namespace PwdLess.Migrations
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("PwdLess.Models.ApplicationUser")
+                    b.HasOne("PwdLess.Data.ApplicationUser")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -344,7 +370,7 @@ namespace PwdLess.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("PwdLess.Models.ApplicationUser")
+                    b.HasOne("PwdLess.Data.ApplicationUser")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -368,6 +394,13 @@ namespace PwdLess.Migrations
                         .WithMany("Tokens")
                         .HasForeignKey("AuthorizationId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("PwdLess.Data.AuthEvent", b =>
+                {
+                    b.HasOne("PwdLess.Data.ApplicationUser", "ApplicationUser")
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId");
                 });
 #pragma warning restore 612, 618
         }

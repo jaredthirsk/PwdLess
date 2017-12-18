@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using PwdLess.Models;
+using PwdLess.Data;
 using PwdLess.Models.HomeViewModels;
 
 namespace PwdLess.Controllers

@@ -11,9 +11,10 @@ using System;
 namespace PwdLess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20171218064234_AuthEvent")]
+    partial class AuthEvent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -306,30 +307,6 @@ namespace PwdLess.Migrations
                     b.ToTable("AspNetUsers");
                 });
 
-            modelBuilder.Entity("PwdLess.Data.AuthEvent", b =>
-                {
-                    b.Property<string>("AuthEventId")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("ApplicationUserId");
-
-                    b.Property<string>("ClientIPAddress");
-
-                    b.Property<string>("ClientUserAgent");
-
-                    b.Property<DateTimeOffset>("OccurrenceTime");
-
-                    b.Property<string>("Subject");
-
-                    b.Property<int>("Type");
-
-                    b.HasKey("AuthEventId");
-
-                    b.HasIndex("ApplicationUserId");
-
-                    b.ToTable("AuthEvents");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole")
@@ -393,13 +370,6 @@ namespace PwdLess.Migrations
                         .WithMany("Tokens")
                         .HasForeignKey("AuthorizationId")
                         .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("PwdLess.Data.AuthEvent", b =>
-                {
-                    b.HasOne("PwdLess.Data.ApplicationUser", "ApplicationUser")
-                        .WithMany()
-                        .HasForeignKey("ApplicationUserId");
                 });
 #pragma warning restore 612, 618
         }

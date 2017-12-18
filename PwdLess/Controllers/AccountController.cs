@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using PwdLess.Data;
 using PwdLess.Filters;
 using PwdLess.Models;
 using PwdLess.Models.AccountViewModels;
@@ -19,6 +21,7 @@ namespace PwdLess.Controllers
     [Route("[controller]/[action]")]
     public class AccountController : Controller
     {
+        private readonly EventsService _events;
         private readonly NoticeService _notice;
         private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -27,6 +30,7 @@ namespace PwdLess.Controllers
         private readonly ILogger _logger;
 
         public AccountController(
+            EventsService events,
             NoticeService notice,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
@@ -34,6 +38,7 @@ namespace PwdLess.Controllers
             IEmailSender emailSender,
             ILogger<AccountController> logger)
         {
+            _events = events;
             _notice = notice;
             _configuration = configuration;
             _userManager = userManager;
@@ -238,6 +243,13 @@ namespace PwdLess.Controllers
                         _notice.AddErrors(ModelState);
                         return View(model);
                     }
+
+                    await _events.AddEvent(AuthEventType.Login, JsonConvert.SerializeObject(new
+                    {
+                        loginProvider = "Email",
+                        providerKey = model.Email
+                    }), userWithConfirmedEmail);
+
                     await _signInManager.SignInAsync(userWithConfirmedEmail, isPersistent: model.RememberMe);
                 }
             }
@@ -247,10 +259,11 @@ namespace PwdLess.Controllers
                 
                 if (userWithConfirmedEmailToAdd == null) // Email to be added never seen before, add email to userCurrentlySignedIn
                 {
+                    
                     var addLoginResult = await _userManager.AddLoginAsync(userCurrentlySignedIn, 
                         new UserLoginInfo("Email", email, "Email"));
 
-                    if (!addLoginResult.Succeeded)
+                    if (addLoginResult.Succeeded)
                     {
                         _notice.AddErrors(ModelState, addLoginResult);
                         return View(model);
@@ -266,6 +279,12 @@ namespace PwdLess.Controllers
                         return View(model);
                     }
 
+                    await _events.AddEvent(AuthEventType.AddLogin, JsonConvert.SerializeObject(new
+                    {
+                        loginProvider = "Email",
+                        providerKey = model.Email
+                    }), userWithConfirmedEmail);
+                    
                 }
                 else // Email to be added is in use
                 {
@@ -325,18 +344,26 @@ namespace PwdLess.Controllers
                 {
                     var externalLoginResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
 
-                    if (externalLoginResult.Succeeded)
-                        return RedirectToLocal(returnUrl); // Success logging in
+                    if (externalLoginResult.Succeeded) // Success logging in
+                    {
+                        await _events.AddEvent(AuthEventType.Login, JsonConvert.SerializeObject(new
+                        {
+                            loginProvider = info.LoginProvider,
+                            providerKey = info.ProviderKey
+                        }), userWithExternalLogin);
+
+                        return RedirectToLocal(returnUrl);
+                    }
 
                     if (externalLoginResult.IsLockedOut || externalLoginResult.IsNotAllowed)
                         return RedirectToAction(nameof(Lockout));
                 }
-                
+
                 // The user does not have an account, is attempting to register
                 return View(nameof(Register), new RegisterViewModel
                 {
-                    EmailFromExternalProvider = emailFromExternalLoginProvider,
-                    ExternalLoginProvider = info.LoginProvider,
+                    Email = emailFromExternalLoginProvider,
+                    ExternalLoginProviderDisplayName = info.ProviderDisplayName,
                     ReturnUrl = returnUrl
                 });
 
@@ -358,7 +385,10 @@ namespace PwdLess.Controllers
                     }
                 }
 
-                userCurrentlySignedIn.EmailFromExternalProvider = emailFromExternalLoginProvider;
+                // If email is not confirmed then update their unconfirmed email
+                if (!String.IsNullOrWhiteSpace(emailFromExternalLoginProvider) &&
+                    userCurrentlySignedIn.EmailConfirmed == false)
+                    userCurrentlySignedIn.Email = emailFromExternalLoginProvider;
 
                 var addLoginResult = await _userManager.AddLoginAsync(userCurrentlySignedIn, info);
                 if (addLoginResult.Succeeded)
@@ -367,6 +397,12 @@ namespace PwdLess.Controllers
                     if (updateResult.Succeeded)
                     {
                         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme); // Clear the existing external cookie to ensure a clean login process
+
+                        await _events.AddEvent(AuthEventType.AddLogin, JsonConvert.SerializeObject(new
+                        {
+                            loginProvider = info.LoginProvider,
+                            providerKey = info.ProviderKey
+                        }), userCurrentlySignedIn);
 
                         return RedirectToLocal(returnUrl);
                     }
@@ -384,36 +420,38 @@ namespace PwdLess.Controllers
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid || 
-                (String.IsNullOrWhiteSpace(model.Email) ^ String.IsNullOrWhiteSpace(model.Email)))
+                String.IsNullOrWhiteSpace(model.Email)) //  Note: this means that external logins not providing an email are unusable.
                 return View("Register", model);
 
-            var email = _userManager.NormalizeKey(model.Email ?? model.EmailFromExternalProvider);
+            var email = _userManager.NormalizeKey(model.Email);
             
-            UserLoginInfo loginInfo = await _signInManager.GetExternalLoginInfoAsync();
+            UserLoginInfo info = await _signInManager.GetExternalLoginInfoAsync();
 
             var userEmpty = new ApplicationUser()
             {
                 UserName = model.UserName,
+                Email = email,
                 DateCreated = DateTimeOffset.UtcNow,
                 SecurityStamp = "",
 
                 FavColor = model.FavColor,
             };
 
-            if (loginInfo == null) // User trying to register locally
+            userEmpty.Email = email;
+
+            if (info == null) // User trying to register locally
             {
-                userEmpty.Id = email; // Is set to null a few lines later
-                userEmpty.Email = email;
                 userEmpty.EmailConfirmed = true;
 
                 var userWithConfirmedEmail = await _userManager.FindByLoginAsync("Email", email);
 
+                userEmpty.Id = email; // Only for token verification, is set to null later
                 var isTokenValid = await _userManager.VerifyUserTokenAsync(userEmpty, "Default", "Register", model.Token);
 
                 if (isTokenValid && userWithConfirmedEmail == null) // Supplied email is verified & user does not exist
                 {
                     userEmpty.Id = null;
-                    loginInfo = new UserLoginInfo("Email", userEmpty.Email, "Email");
+                    info = new UserLoginInfo("Email", userEmpty.Email, "Email");
                 }
                 else
                 {
@@ -424,19 +462,26 @@ namespace PwdLess.Controllers
             }
             else // User trying to register after external login
             {
-                userEmpty.EmailFromExternalProvider = email;
+                userEmpty.EmailConfirmed = false;
             }
             var createResult = await _userManager.CreateAsync(userEmpty);            
 
             if (createResult.Succeeded)
             {
-                var addLoginResult = await _userManager.AddLoginAsync(userEmpty, loginInfo);
+                var addLoginResult = await _userManager.AddLoginAsync(userEmpty, info);
 
                 if (addLoginResult.Succeeded)
                 {
-                    // Success
-                    await _signInManager.SignInAsync(userEmpty, isPersistent: model.RememberMe);
-                    return RedirectToLocal(model.ReturnUrl);
+                    var user = await _userManager.FindByNameAsync(model.UserName); // This works because usernames are unique
+
+                    await _events.AddEvent(AuthEventType.Register, JsonConvert.SerializeObject(new
+                    {
+                        loginProvider = info?.LoginProvider ?? "Email",
+                        providerKey = info?.ProviderKey ?? email
+                    }), user);
+                    
+                    await _signInManager.SignInAsync(user, isPersistent: model.RememberMe);
+                    return RedirectToLocal(model.ReturnUrl); // Success
                 }
             }
             else

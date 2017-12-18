@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace PwdLess.Migrations
 {
-    public partial class Init : Migration
+    public partial class AuthEvent : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -30,6 +30,7 @@ namespace PwdLess.Migrations
                     Id = table.Column<string>(nullable: false),
                     AccessFailedCount = table.Column<int>(nullable: false),
                     ConcurrencyStamp = table.Column<string>(nullable: true),
+                    DateCreated = table.Column<DateTimeOffset>(nullable: false),
                     Email = table.Column<string>(maxLength: 256, nullable: true),
                     EmailConfirmed = table.Column<bool>(nullable: false),
                     EmailFromExternalProvider = table.Column<string>(nullable: true),

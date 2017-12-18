@@ -1,14 +1,11 @@
 ﻿using System;
-using PwdLess.Models;
-
-/*
- *  Currently unused, might be in the future
- */
 
 namespace PwdLess.Data
 {
     public class AuthEvent
     {
+        public string AuthEventId { get; set; }
+
         public string ApplicationUserId { get; set; }
         public ApplicationUser ApplicationUser { get; set; }
 
@@ -16,20 +13,25 @@ namespace PwdLess.Data
 
         public string ClientUserAgent { get; set; }
 
-        public DateTime OccurrenceTime { get; set; }
-
-        public string Subject { get; set; }
+        public DateTimeOffset OccurrenceTime { get; set; }
 
         public AuthEventType Type { get; set; }
+
+        public string Subject { get; set; }
     }
 
+    // Note: CRU events are sent after successful completion
+    //       D events are sent just before attempt
     public enum AuthEventType
     {
-        RegisterLocal,
-        RegisterExternal,
-        LoginExternal,
-        LoginLocal,
-        Update,
+        Register,
+        AddLogin,
+
+        Login,
+
+        EditUserInfo,
+
+        RemoveLogin,
         Delete
     }
 }

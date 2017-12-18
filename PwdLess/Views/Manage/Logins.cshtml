@@ -19,7 +19,7 @@
 {
     <div class="row">
         <div class="column">
-            @login.LoginProvider
+            @login.ProviderDisplayName
 
             @if (login.LoginProvider == "Email")
             {
@@ -35,7 +35,8 @@
             <form asp-action="@nameof(ManageController.RemoveLogin)" method="post">
                 <input asp-for="@login.LoginProvider" name="LoginProvider" type="hidden" />
                 <input asp-for="@login.ProviderKey" name="ProviderKey" type="hidden" />
-                @if (Model.Logins.Count == 1 || (String.IsNullOrWhiteSpace(Model.EmailFromExternalProvider) && Model.Logins.Where(l => l.LoginProvider == "Email").Count() == 1 && login.LoginProvider == "Email"))
+                @if (Model.Logins.Count == 1 || 
+                    (Model.Logins.Where(l => l.LoginProvider == "Email").Count() == 1 && login.LoginProvider == "Email"))
                 {
                     <button type="submit" class="button button-clear"
                             style="margin:0px;padding:0px;"
