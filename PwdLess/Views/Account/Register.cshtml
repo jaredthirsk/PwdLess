@@ -7,20 +7,30 @@
 <div class="row">
     <div class="column">
         <h3>Just one more thing!</h3>
-        Fill out the following to complete your registration.
-        @if (ViewData["LoginProvider"] != null)
+        @if (String.IsNullOrWhiteSpace(Model.ExternalLoginProvider))
         {
-            <small><em>(Registering with @ViewData["LoginProvider"])</em></small>
+            @:Fill out the following to complete your registration.
+        }
+        else
+        {
+            @:Fill out the following to complete your registeration with @Model.ExternalLoginProvider.
+                
+            @if (!String.IsNullOrWhiteSpace(Model.EmailFromExternalProvider))
+            {
+                <br />
+                <small><em>(Email: @Model.EmailFromExternalProvider.ToLower())</em></small>
+            }
         }
     </div>
 </div>
 
 <div class="row">
     <div class="column">
-        <form asp-route-returnurl="@ViewData["ReturnUrl"]" method="post">
+        <form method="post" asp-action="@nameof(AccountController.Register)">
 
             <input asp-for="Email" type="hidden" value="@Model.Email" />
             <input asp-for="EmailFromExternalProvider" type="hidden" value="@Model.EmailFromExternalProvider" />
+            <input asp-for="ReturnUrl" type="hidden" value="@Model.ReturnUrl" />
             <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />
             <input asp-for="Token" type="hidden" value="@Model.Token" />
 

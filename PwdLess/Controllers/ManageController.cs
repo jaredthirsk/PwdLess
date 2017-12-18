@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using PwdLess.Models;
 using PwdLess.Models.HomeViewModels;
 using PwdLess.Models.ManageViewModels;
+using PwdLess.Services;
 
 namespace PwdLess.Controllers
 {
@@ -17,18 +18,21 @@ namespace PwdLess.Controllers
     [Route("[controller]/[action]")]
     public class ManageController : Controller
     {
+        private readonly NoticeService _notice;
         private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger _logger;
 
         public ManageController(
+          NoticeService notice,
           IConfiguration configuration,
           UserManager<ApplicationUser> userManager,
           SignInManager<ApplicationUser> signInManager,
           ILogger<ManageController> logger,
           UrlEncoder urlEncoder)
         {
+            _notice = notice;
             _configuration = configuration;
             _userManager = userManager;
             _signInManager = signInManager;
@@ -48,17 +52,14 @@ namespace PwdLess.Controllers
             if (user == null)
             {
                 await _signInManager.SignOutAsync();
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Error
-                });
+                return _notice.Error(this);
             }
 
             var model = new EditUserInfoViewModel
             {
                 UserName = user.UserName,
                 Logins = await _userManager.GetLoginsAsync(user),
-                CommunicationEmail = user.EmailConfirmed ? user.Email : user.EmailFromExternalProvider,
+                PrimaryEmail = user.EmailConfirmed ? user.Email : user.EmailFromExternalProvider,
 
                 FavColor = user.FavColor
             };
@@ -74,13 +75,11 @@ namespace PwdLess.Controllers
             if (user == null)
             {
                 await _signInManager.SignOutAsync();
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Error
-                });
+                _notice.AddErrors(ModelState);
+                return View(model);
             }
 
-            var email = _userManager.NormalizeKey(model.CommunicationEmail);
+            var email = _userManager.NormalizeKey(model.PrimaryEmail);
             var userLogins = await _userManager.GetLoginsAsync(user);
 
             model.Logins = userLogins; //Model binding doesn't work with IList
@@ -103,17 +102,12 @@ namespace PwdLess.Controllers
             
             if (!updateResult.Succeeded)
             {
-                AddErrors(updateResult);
+                _notice.AddErrors(ModelState, updateResult);
                 return View(model);
             }
 
             await _signInManager.RefreshSignInAsync(user);
-            return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-            {
-                NoticeType = NoticeType.Success,
-                Title = "Your profile has been updated.",
-                Description = " "
-            });
+            return _notice.Success(this, "Your profile has been updated.");
         }
 
         [HttpGet]
@@ -123,10 +117,7 @@ namespace PwdLess.Controllers
             if (user == null)
             {
                 await _signInManager.SignOutAsync();
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Error
-                });
+                return _notice.Error(this);
             }
 
             var model = new LoginsViewModel
@@ -146,10 +137,8 @@ namespace PwdLess.Controllers
             if (user == null)
             {
                 await _signInManager.SignOutAsync();
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Error
-                });
+                _notice.AddErrors(ModelState);
+                return View(model);
             }
 
             var userLogins = await _userManager.GetLoginsAsync(user);
@@ -160,19 +149,12 @@ namespace PwdLess.Controllers
                 if (deleteResult.Succeeded)
                 {
                     await _signInManager.SignOutAsync();
-                    return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                    {
-                        NoticeType = NoticeType.Success,
-                        Title = "Your account has been successfully deleted.", // TODO: better deletion than keeps account for n days
-                        Description = " "
-                    });
+                    return _notice.Success(this, "Your account has been successfully deleted."); // TODO: keep account for n days feature
                 }
                 else
                 {
-                    return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                    {
-                        NoticeType = NoticeType.Error
-                    });
+                    _notice.AddErrors(ModelState);
+                    return View(model);
                 }
             }
 
@@ -184,41 +166,24 @@ namespace PwdLess.Controllers
                     user.EmailConfirmed = user.Email == null ? false : true;
                     var updateResult = await _userManager.UpdateAsync(user);
                     if (!updateResult.Succeeded)
-                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                        {
-                            NoticeType = NoticeType.Error
-                        });
+                    {
+                        _notice.AddErrors(ModelState);
+                        return View(model);
+                    }
                 }
             }
 
             var removeLoginResult = await _userManager.RemoveLoginAsync(user, model.LoginProvider, model.ProviderKey);
             if (!removeLoginResult.Succeeded)
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Error
-                });
+            {
+                _notice.AddErrors(ModelState);
+                return View(model);
+            }
 
             await _signInManager.SignInAsync(user, isPersistent: false);
 
 
-            return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-            {
-                NoticeType = NoticeType.Success,
-                Title = "Login successfully removed.",
-                Description = " "
-            });
+            return _notice.Success(this, "Login successfully removed.");
         }
-
-        #region Helpers
-
-        private void AddErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-        }
-
-        #endregion
     }
 }

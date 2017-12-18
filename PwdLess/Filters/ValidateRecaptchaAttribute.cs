@@ -50,7 +50,7 @@ namespace PwdLess.Filters
                     {
                         context.ModelState.AddModelError("reCAPTCHA", "No response recieved from reCAPTCHA.");
                     }
-                    else if (!response.success)
+                    else if (!(bool)response.success)
                     {
                         context.ModelState.AddModelError("reCAPTCHA", "Invalid reCAPTCHA submitted.");
                     }

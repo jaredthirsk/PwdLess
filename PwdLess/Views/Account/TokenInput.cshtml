@@ -15,9 +15,10 @@
     </div>
 </div>
 
+<h3 class="text-danger">@ViewData["Rrror"]</h3>
 
 <div class="row">
-    <form id="main-form" method="post" role="form" class="column">
+    <form asp-action="@nameof(AccountController.TokenInput)" id="main-form" method="post" role="form" class="column">
         <div asp-validation-summary="All" class="text-danger"></div>
 
         <input asp-for="RememberMe" type="hidden" value="@Model.RememberMe" />

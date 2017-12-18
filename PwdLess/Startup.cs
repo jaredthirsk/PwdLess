@@ -125,6 +125,8 @@ namespace PwdLess
             }
 
             services.AddScoped<ValidateRecaptchaAttribute>();
+
+            services.AddTransient<NoticeService>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

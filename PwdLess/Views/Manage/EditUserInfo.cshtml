@@ -15,15 +15,15 @@
             <label asp-for="UserName"></label>
             <input asp-for="UserName" class="form-control" />
 
-            <label asp-for="CommunicationEmail"></label>
+            <label asp-for="PrimaryEmail"></label>
             @if (Model.Logins.Where(l => l.LoginProvider == "Email").Count() > 1)
             {
-                <select asp-for="CommunicationEmail" asp-items=@Model.Logins.Where(l => l.LoginProvider == "Email").Select(l => new SelectListItem() { Text = l.ProviderKey.ToLower(), Value = l.ProviderKey, Selected = Model.CommunicationEmail.ToLower() == l.ProviderKey.ToLower() }) ></select>
+                <select asp-for="PrimaryEmail" asp-items=@Model.Logins.Where(l => l.LoginProvider == "Email").Select(l => new SelectListItem() { Text = l.ProviderKey.ToLower(), Value = l.ProviderKey, Selected = Model.PrimaryEmail.ToLower() == l.ProviderKey.ToLower() }) ></select>
             }
             else
             {
-                <input asp-for="CommunicationEmail" type="hidden" value="@Model.CommunicationEmail" />
-                <em>@Model.CommunicationEmail.ToLower()</em>
+                <input asp-for="PrimaryEmail" type="hidden" value="@Model.PrimaryEmail" />
+                <em>@Model.PrimaryEmail.ToLower()</em>
 
                 @if (!Model.Logins.Any(l => l.LoginProvider == "Email"))
                 {

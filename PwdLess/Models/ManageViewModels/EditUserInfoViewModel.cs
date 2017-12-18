@@ -12,6 +12,6 @@ namespace PwdLess.Models.ManageViewModels
         [Required]
         [EmailAddress]
         [Display(Name = "Main email")]
-        public string CommunicationEmail { get; set; }
+        public string PrimaryEmail { get; set; }
     }
 }

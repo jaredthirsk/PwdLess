@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using OpenIddict.Core;
 using PwdLess.Models.HomeViewModels;
 using Microsoft.Extensions.Configuration;
+using PwdLess.Services;
 
 /*
  *  This code is adapted from OpenIddict, which is licensed under Apache 2.0 
@@ -21,17 +22,20 @@ namespace PwdLess.Controllers
 {
     public class AuthorizationController : Controller
     {
+        private readonly NoticeService _notice;
         private readonly IConfiguration _configuration;
         private readonly IOptions<IdentityOptions> _identityOptions;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
 
         public AuthorizationController(
+            NoticeService notice,
             IConfiguration configuration,
             IOptions<IdentityOptions> identityOptions,
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager)
         {
+            _notice = notice;
             _configuration = configuration;
             _identityOptions = identityOptions;
             _signInManager = signInManager;
@@ -64,11 +68,7 @@ namespace PwdLess.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Error,
-                    Title = OpenIdConnectConstants.Errors.ServerError,
-                });
+                return _notice.Error(this, OpenIdConnectConstants.Errors.ServerError);
             }
 
             // Create a new authentication ticket.

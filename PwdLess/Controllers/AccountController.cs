@@ -19,6 +19,7 @@ namespace PwdLess.Controllers
     [Route("[controller]/[action]")]
     public class AccountController : Controller
     {
+        private readonly NoticeService _notice;
         private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
@@ -26,12 +27,14 @@ namespace PwdLess.Controllers
         private readonly ILogger _logger;
 
         public AccountController(
+            NoticeService notice,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             IEmailSender emailSender,
             ILogger<AccountController> logger)
         {
+            _notice = notice;
             _configuration = configuration;
             _userManager = userManager;
             _signInManager = signInManager;
@@ -98,12 +101,8 @@ namespace PwdLess.Controllers
                 {
                     if (userWithConfirmedEmail.Id == userCurrentlySignedIn.Id) // Email already added to user's account
                     {
-                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                        {
-                            NoticeType = NoticeType.Warning,
-                            Title = "This email is already added to your account.",
-                            Description = " "
-                        });
+                        _notice.AddErrors(ModelState, "This email is already in your account.");
+                        return View(model);
                     }
                     else // Email associated with another account that's not the user's
                     {
@@ -143,7 +142,7 @@ namespace PwdLess.Controllers
 
             await _emailSender.SendTokenAsync(email, attemptedOperation, callbackUrl, token);
 
-            return RedirectToAction(nameof(TokenInput), 
+            return View(nameof(TokenInput), 
                 new TokenInputViewModel
                 {
                     RememberMe = model.RememberMe,
@@ -164,21 +163,16 @@ namespace PwdLess.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        [ActionName("TokenInput")]
+        [ActionName(nameof(AccountController.TokenInput))]
         [ServiceFilter(typeof(ValidateRecaptchaAttribute))]
-        public async Task<IActionResult> SubmitToken(TokenInputViewModel model)
+        public async Task<IActionResult> SubmitTokenInput(TokenInputViewModel model)
         {
             if (!ModelState.IsValid ||
                 String.IsNullOrWhiteSpace(model.Email) ||
                 String.IsNullOrWhiteSpace(model.Purpose) ||
                 String.IsNullOrWhiteSpace(model.Token))
             {
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Warning,
-                    Title = "Invalid parameters supplied.",
-                    Description = "Did you type in the code correctly?"
-                });
+                return View(model);
             }
 
             var email = _userManager.NormalizeKey(model.Email);
@@ -203,7 +197,7 @@ namespace PwdLess.Controllers
             }
             else // Trying to add email
             {
-                if (userCurrentlySignedIn == null) // If the user is not signed in, prompt them to, then let them back here
+                if (userCurrentlySignedIn == null) // If the user is not signed in, prompt them to, with the return url leading back here
                     return RedirectToAction(nameof(Login), new
                     {
                         returnUrl = Request.Path + Request.QueryString
@@ -215,32 +209,35 @@ namespace PwdLess.Controllers
             }
 
             if (!isTokenValid)
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Error,
-                    Title = "Problem validating code.",
-                    Description = "Your code might have expired. Please try again!"
-                });
+            {
+                _notice.AddErrors(ModelState, "Error validating code, it might have expired. Please try again!");
+                return View(model);
+            }
 
             // Valid {token + email (user) + purpose} supplied
-            
+
             if (model.Purpose == "RegisterOrLogin") // Trying to register or login
             {
                 if (userWithConfirmedEmail == null) // Success trying to register
                 {
                     var token = await _userManager.GenerateUserTokenAsync(userEmpty, "Default", "Register");
 
-                    ViewData["ReturnUrl"] = model.ReturnUrl;
-
-                    return View("Register", new RegisterViewModel
+                    return View(nameof(Register), new RegisterViewModel
                     {
                         RememberMe = model.RememberMe,
                         Email = email,
-                        Token = token
+                        Token = token,
+                        ReturnUrl = model.ReturnUrl
                     });
                 }
                 else // Success trying to login
                 {
+                    var updateSecStampResult = await _userManager.UpdateSecurityStampAsync(userWithConfirmedEmail); // Renders token expired
+                    if (!updateSecStampResult.Succeeded)
+                    {
+                        _notice.AddErrors(ModelState);
+                        return View(model);
+                    }
                     await _signInManager.SignInAsync(userWithConfirmedEmail, isPersistent: model.RememberMe);
                 }
             }
@@ -254,41 +251,33 @@ namespace PwdLess.Controllers
                         new UserLoginInfo("Email", email, "Email"));
 
                     if (!addLoginResult.Succeeded)
-                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                        {
-                            NoticeType = NoticeType.Error
-                        });
+                    {
+                        _notice.AddErrors(ModelState, addLoginResult);
+                        return View(model);
+                    }
 
                     userCurrentlySignedIn.Email = email;
                     userCurrentlySignedIn.EmailConfirmed = true;
                     var updateUserResult = await _userManager.UpdateAsync(userCurrentlySignedIn);
 
                     if (!updateUserResult.Succeeded)
-                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                        {
-                            NoticeType = NoticeType.Error
-                        });
+                    {
+                        _notice.AddErrors(ModelState, updateUserResult);
+                        return View(model);
+                    }
 
                 }
                 else // Email to be added is in use
                 {
                     if (userWithConfirmedEmailToAdd.Id == userCurrentlySignedIn.Id) // Email is already in user's account
                     {
-                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                        {
-                            NoticeType = NoticeType.Warning,
-                            Title = "This email is already in your account.",
-                            Description = " "
-                        });
+                        _notice.AddErrors(ModelState, "This email is already in your account.");
+                        return View(model);
                     }
                     else // Email associated with another account (same user since both verified!)
                     {
-                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                        {
-                            NoticeType = NoticeType.Warning,
-                            Title = "This email is in another user's account.",
-                            Description = $"To add it to this account instead, login to {email} then delete the account or add an alternative login method."
-                        });
+                        _notice.AddErrors(ModelState, "This email is in another user's account. Try logging in using that email instead.");
+                        return View(model);
                     }
                 }
             }
@@ -344,11 +333,11 @@ namespace PwdLess.Controllers
                 }
                 
                 // The user does not have an account, is attempting to register
-                ViewData["ReturnUrl"] = returnUrl;
-                ViewData["LoginProvider"] = info.LoginProvider;
-                return View("Register", new RegisterViewModel()
+                return View(nameof(Register), new RegisterViewModel
                 {
-                    EmailFromExternalProvider = emailFromExternalLoginProvider
+                    EmailFromExternalProvider = emailFromExternalLoginProvider,
+                    ExternalLoginProvider = info.LoginProvider,
+                    ReturnUrl = returnUrl
                 });
 
             }
@@ -359,23 +348,13 @@ namespace PwdLess.Controllers
                 {
                     if (userWithExternalLogin.Id == userCurrentlySignedIn.Id) // External login is already in user's account
                     {
-                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                        {
-                            NoticeType = NoticeType.Warning,
-                            Title = "This external login is already in your account.",
-                            Description = " ",
-                            ShowBackButton = false
-                        });
+                        _notice.AddErrors(ModelState, "This external login is already in your account.");
+                        return View(nameof(Login));
                     }
                     else
                     {
-                        return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                        {
-                            NoticeType = NoticeType.Warning,
-                            Title = "This external login is in another user's account.",
-                            Description = $"To add it to this account instead, login to the other account then delete it or add an alternative login method.",
-                            ShowBackButton = false
-                        });
+                        _notice.AddErrors(ModelState, "This external login is in another user's account. Try loggin out then back in with that instead.");
+                        return View(nameof(Login));
                     }
                 }
 
@@ -393,22 +372,17 @@ namespace PwdLess.Controllers
                     }
                 }
 
-                return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                {
-                    NoticeType = NoticeType.Error
-                });
+                _notice.AddErrors(ModelState);
+                return View(nameof(Login));
             }
 
         }
 
-
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
             if (!ModelState.IsValid || 
                 (String.IsNullOrWhiteSpace(model.Email) ^ String.IsNullOrWhiteSpace(model.Email)))
                 return View("Register", model);
@@ -443,10 +417,8 @@ namespace PwdLess.Controllers
                 }
                 else
                 {
-                    return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-                    {
-                        NoticeType = NoticeType.Error
-                    });
+                    _notice.AddErrors(ModelState);
+                    return View(nameof(Register), model);
                 }
 
             }
@@ -464,22 +436,20 @@ namespace PwdLess.Controllers
                 {
                     // Success
                     await _signInManager.SignInAsync(userEmpty, isPersistent: model.RememberMe);
-                    return RedirectToLocal(returnUrl);
+                    return RedirectToLocal(model.ReturnUrl);
                 }
             }
             else
             {
-                AddErrors(createResult);
-                return View("Register", model);
+                _notice.AddErrors(ModelState);
+                return View(nameof(Register), model);
             }
 
 
             await _userManager.DeleteAsync(userEmpty);
 
-            return RedirectToAction(nameof(HomeController.Notice), "Home", new NoticeViewModel
-            {
-                NoticeType = NoticeType.Error
-            });
+            _notice.AddErrors(ModelState);
+            return View(nameof(Register), model);
         }
 
         [HttpPost]
@@ -498,14 +468,6 @@ namespace PwdLess.Controllers
         }
   
         #region Helpers
-
-        private void AddErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-        }
 
         private IActionResult RedirectToLocal(string returnUrl)
         {
