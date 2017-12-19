@@ -41,7 +41,9 @@ a:focus, a:hover {
 
 .main {
     padding-top: 1%;
-    margin-top: 15%;
+    padding-bottom: 1%;
+    margin-top: 5%;
+    margin-bottom: 5%;
     border: 1px dashed #F3E5F5;
     border-radius: 5px;
     box-shadow: 2px 2px 50px 0px rgba(222,222,222,0.62);
@@ -73,8 +75,13 @@ a:focus, a:hover {
     background-color: blue;
 }
 
+
+/* Properties to override on non-mobile */
 @media (min-width: 40.0rem) {
     .hide-on-mobile{
         display: inline;
+    }
+    .main{
+        margin-top: 15%;
     }
 }

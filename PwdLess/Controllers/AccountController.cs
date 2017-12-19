@@ -12,6 +12,7 @@ using PwdLess.Models.AccountViewModels;
 using PwdLess.Models.HomeViewModels;
 using PwdLess.Services;
 using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -26,6 +27,7 @@ namespace PwdLess.Controllers
         private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly ApplicationDbContext _context;
         private readonly IEmailSender _emailSender;
         private readonly ILogger _logger;
 
@@ -35,6 +37,7 @@ namespace PwdLess.Controllers
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
+            ApplicationDbContext context,
             IEmailSender emailSender,
             ILogger<AccountController> logger)
         {
@@ -43,16 +46,30 @@ namespace PwdLess.Controllers
             _configuration = configuration;
             _userManager = userManager;
             _signInManager = signInManager;
+            _context = context;
             _emailSender = emailSender;
             _logger = logger;
+
+
         }
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult Login(string returnUrl = null)
+        public async Task<IActionResult> Login(string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            return View();
+
+            var user = await _userManager.GetUserAsync(User);
+
+            var model = new LoginViewModel();
+
+            if (user != null)
+            {
+                model.DidReachMaxLoginsAllowed = DidReachMaxLoginsAllowed(user);
+                model.MaxLoginsAllowed = MaxLoginsAllowed;
+            }
+
+            return View(model);
         }
 
         [HttpPost]
@@ -100,6 +117,13 @@ namespace PwdLess.Controllers
 
                 if (userWithConfirmedEmail == null) // Email not associated with any other accounts (trying to add a novel email)
                 {
+                    // Check to see if user reached max logins
+                    if (DidReachMaxLoginsAllowed(userCurrentlySignedIn))
+                    {
+                        _notice.AddErrors(ModelState, $"Sorry, you've reached the maximum allowed number of logins ({MaxLoginsAllowed}).");
+                        return View(nameof(Login));
+                    }
+                    
                     attemptedOperation = AuthOperation.AddingNovelEmail;
                 }
                 else // Email associated with another user's account
@@ -195,6 +219,8 @@ namespace PwdLess.Controllers
 
             if (model.Purpose == "RegisterOrLogin") // Trying to register or login
             {
+                await _signInManager.SignOutAsync();
+
                 isTokenValid = await _userManager.VerifyUserTokenAsync(
                     userWithConfirmedEmail  // Case: logging-in
                     ?? userEmpty,           // Case: registering,
@@ -219,6 +245,18 @@ namespace PwdLess.Controllers
                 return View(model);
             }
 
+            // Invalidates all tokens for user when trying to login or add login
+            // Note: this also invalidates any attempts to add more logins than allowed
+            if ((userCurrentlySignedIn ?? userWithConfirmedEmail) != null)
+            {
+                var updateSecStampResult = await _userManager.UpdateSecurityStampAsync(userCurrentlySignedIn ?? userWithConfirmedEmail);
+                if (!updateSecStampResult.Succeeded)
+                {
+                    _notice.AddErrors(ModelState);
+                    return View(model);
+                }
+            }
+
             // Valid {token + email (user) + purpose} supplied
 
             if (model.Purpose == "RegisterOrLogin") // Trying to register or login
@@ -237,17 +275,10 @@ namespace PwdLess.Controllers
                 }
                 else // Success trying to login
                 {
-                    var updateSecStampResult = await _userManager.UpdateSecurityStampAsync(userWithConfirmedEmail); // Renders token expired
-                    if (!updateSecStampResult.Succeeded)
-                    {
-                        _notice.AddErrors(ModelState);
-                        return View(model);
-                    }
-
                     await _events.AddEvent(AuthEventType.Login, JsonConvert.SerializeObject(new
                     {
-                        loginProvider = "Email",
-                        providerKey = model.Email
+                        LoginProvider = "Email",
+                        ProviderKey = model.Email
                     }), userWithConfirmedEmail);
 
                     await _signInManager.SignInAsync(userWithConfirmedEmail, isPersistent: model.RememberMe);
@@ -259,11 +290,11 @@ namespace PwdLess.Controllers
                 
                 if (userWithConfirmedEmailToAdd == null) // Email to be added never seen before, add email to userCurrentlySignedIn
                 {
-                    
+
                     var addLoginResult = await _userManager.AddLoginAsync(userCurrentlySignedIn, 
                         new UserLoginInfo("Email", email, "Email"));
 
-                    if (addLoginResult.Succeeded)
+                    if (!addLoginResult.Succeeded)
                     {
                         _notice.AddErrors(ModelState, addLoginResult);
                         return View(model);
@@ -281,14 +312,15 @@ namespace PwdLess.Controllers
 
                     await _events.AddEvent(AuthEventType.AddLogin, JsonConvert.SerializeObject(new
                     {
-                        loginProvider = "Email",
-                        providerKey = model.Email
-                    }), userWithConfirmedEmail);
+                        LoginProvider = "Email",
+                        ProviderKey = model.Email
+                    }), userCurrentlySignedIn);
                     
                 }
                 else // Email to be added is in use
                 {
-                    if (userWithConfirmedEmailToAdd.Id == userCurrentlySignedIn.Id) // Email is already in user's account
+                    // Note: this area is unlikely to be reached since security stamp is changed once a login is added
+                    if (userWithConfirmedEmailToAdd.Id == userCurrentlySignedIn.Id) // Email is already in user's account 
                     {
                         _notice.AddErrors(ModelState, "This email is already in your account.");
                         return View(model);
@@ -348,8 +380,8 @@ namespace PwdLess.Controllers
                     {
                         await _events.AddEvent(AuthEventType.Login, JsonConvert.SerializeObject(new
                         {
-                            loginProvider = info.LoginProvider,
-                            providerKey = info.ProviderKey
+                            info.LoginProvider,
+                            info.ProviderKey
                         }), userWithExternalLogin);
 
                         return RedirectToLocal(returnUrl);
@@ -385,11 +417,21 @@ namespace PwdLess.Controllers
                     }
                 }
 
+                // Check to see if user reached max logins
+                if (DidReachMaxLoginsAllowed(userCurrentlySignedIn))
+                {
+                    _notice.AddErrors(ModelState, $"Sorry, you've reached the maximum allowed number of logins ({MaxLoginsAllowed}).");
+                    return View(nameof(Login));
+                }
+
                 // If email is not confirmed then update their unconfirmed email
                 if (!String.IsNullOrWhiteSpace(emailFromExternalLoginProvider) &&
                     userCurrentlySignedIn.EmailConfirmed == false)
+                {
                     userCurrentlySignedIn.Email = emailFromExternalLoginProvider;
-
+                    userCurrentlySignedIn.EmailConfirmed = false;
+                }
+                    
                 var addLoginResult = await _userManager.AddLoginAsync(userCurrentlySignedIn, info);
                 if (addLoginResult.Succeeded)
                 {
@@ -400,8 +442,8 @@ namespace PwdLess.Controllers
 
                         await _events.AddEvent(AuthEventType.AddLogin, JsonConvert.SerializeObject(new
                         {
-                            loginProvider = info.LoginProvider,
-                            providerKey = info.ProviderKey
+                            info.LoginProvider,
+                            info.ProviderKey
                         }), userCurrentlySignedIn);
 
                         return RedirectToLocal(returnUrl);
@@ -476,8 +518,8 @@ namespace PwdLess.Controllers
 
                     await _events.AddEvent(AuthEventType.Register, JsonConvert.SerializeObject(new
                     {
-                        loginProvider = info?.LoginProvider ?? "Email",
-                        providerKey = info?.ProviderKey ?? email
+                        LoginProvider = info?.LoginProvider ?? "Email",
+                        ProviderKey = info?.ProviderKey ?? email
                     }), user);
                     
                     await _signInManager.SignInAsync(user, isPersistent: model.RememberMe);
@@ -530,6 +572,19 @@ namespace PwdLess.Controllers
                     ShowBackButton = false
                 });
             }
+        }
+
+        private int MaxLoginsAllowed { get
+            {
+                return Int32.Parse(_configuration["PwdLess:Logins:MaxLoginsAllowed"]);
+            } }
+
+        private bool DidReachMaxLoginsAllowed(ApplicationUser user)
+        {
+            // Check to see if user reached max logins
+
+            var userLoginCount = _context.UserLogins.Count(l => l.UserId == user.Id);
+            return userLoginCount >= MaxLoginsAllowed;
         }
 
         #endregion

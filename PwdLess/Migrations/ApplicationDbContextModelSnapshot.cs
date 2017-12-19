@@ -266,8 +266,6 @@ namespace PwdLess.Migrations
 
                     b.Property<bool>("EmailConfirmed");
 
-                    b.Property<string>("EmailFromExternalProvider");
-
                     b.Property<string>("FavColor");
 
                     b.Property<bool>("LockoutEnabled");
@@ -294,6 +292,8 @@ namespace PwdLess.Migrations
                         .HasMaxLength(256);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email");
 
                     b.HasIndex("NormalizedEmail")
                         .HasName("EmailIndex");
@@ -398,7 +398,7 @@ namespace PwdLess.Migrations
             modelBuilder.Entity("PwdLess.Data.AuthEvent", b =>
                 {
                     b.HasOne("PwdLess.Data.ApplicationUser", "ApplicationUser")
-                        .WithMany()
+                        .WithMany("AuthEvents")
                         .HasForeignKey("ApplicationUserId");
                 });
 #pragma warning restore 612, 618

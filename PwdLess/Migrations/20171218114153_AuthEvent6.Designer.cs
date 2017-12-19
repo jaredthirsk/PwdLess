@@ -11,8 +11,8 @@ using System;
 namespace PwdLess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20171218065635_AuthEvent3")]
-    partial class AuthEvent3
+    [Migration("20171218114153_AuthEvent6")]
+    partial class AuthEvent6
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -267,8 +267,6 @@ namespace PwdLess.Migrations
 
                     b.Property<bool>("EmailConfirmed");
 
-                    b.Property<string>("EmailFromExternalProvider");
-
                     b.Property<string>("FavColor");
 
                     b.Property<bool>("LockoutEnabled");
@@ -295,6 +293,8 @@ namespace PwdLess.Migrations
                         .HasMaxLength(256);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email");
 
                     b.HasIndex("NormalizedEmail")
                         .HasName("EmailIndex");
@@ -399,7 +399,7 @@ namespace PwdLess.Migrations
             modelBuilder.Entity("PwdLess.Data.AuthEvent", b =>
                 {
                     b.HasOne("PwdLess.Data.ApplicationUser", "ApplicationUser")
-                        .WithMany()
+                        .WithMany("AuthEvents")
                         .HasForeignKey("ApplicationUserId");
                 });
 #pragma warning restore 612, 618

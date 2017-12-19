@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace PwdLess.Migrations
 {
-    public partial class AuthEvent : Migration
+    public partial class AuthEvent6 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -33,7 +33,6 @@ namespace PwdLess.Migrations
                     DateCreated = table.Column<DateTimeOffset>(nullable: false),
                     Email = table.Column<string>(maxLength: 256, nullable: true),
                     EmailConfirmed = table.Column<bool>(nullable: false),
-                    EmailFromExternalProvider = table.Column<string>(nullable: true),
                     FavColor = table.Column<string>(nullable: true),
                     LockoutEnabled = table.Column<bool>(nullable: false),
                     LockoutEnd = table.Column<DateTimeOffset>(nullable: true),
@@ -190,6 +189,29 @@ namespace PwdLess.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AuthEvents",
+                columns: table => new
+                {
+                    AuthEventId = table.Column<string>(nullable: false),
+                    ApplicationUserId = table.Column<string>(nullable: true),
+                    ClientIPAddress = table.Column<string>(nullable: true),
+                    ClientUserAgent = table.Column<string>(nullable: true),
+                    OccurrenceTime = table.Column<DateTimeOffset>(nullable: false),
+                    Subject = table.Column<string>(nullable: true),
+                    Type = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuthEvents", x => x.AuthEventId);
+                    table.ForeignKey(
+                        name: "FK_AuthEvents_AspNetUsers_ApplicationUserId",
+                        column: x => x.ApplicationUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OpenIddictAuthorizations",
                 columns: table => new
                 {
@@ -273,6 +295,11 @@ namespace PwdLess.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_Email",
+                table: "AspNetUsers",
+                column: "Email");
+
+            migrationBuilder.CreateIndex(
                 name: "EmailIndex",
                 table: "AspNetUsers",
                 column: "NormalizedEmail");
@@ -283,6 +310,11 @@ namespace PwdLess.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuthEvents_ApplicationUserId",
+                table: "AuthEvents",
+                column: "ApplicationUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OpenIddictApplications_ClientId",
@@ -329,6 +361,9 @@ namespace PwdLess.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "AuthEvents");
 
             migrationBuilder.DropTable(
                 name: "OpenIddictScopes");

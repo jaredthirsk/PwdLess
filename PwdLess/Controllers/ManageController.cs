@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +8,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PwdLess.Data;
-using PwdLess.Models;
 using PwdLess.Models.ManageViewModels;
 using PwdLess.Services;
 
@@ -112,9 +110,9 @@ namespace PwdLess.Controllers
                 _notice.AddErrors(ModelState, updateResult);
                 return View(model);
             }
-
+            
             await _events.AddEvent(AuthEventType.EditUserInfo, 
-                JsonConvert.SerializeObject(model as IAdditionalUserInfo), user);
+                JsonConvert.SerializeObject(model), user);
 
             await _signInManager.RefreshSignInAsync(user);
             return _notice.Success(this, "Your profile has been updated.");
@@ -211,5 +209,25 @@ namespace PwdLess.Controllers
             await _signInManager.RefreshSignInAsync(user);
             return _notice.Success(this, "Login successfully removed.");
         }
+
+
+        [HttpGet]
+        public async Task<IActionResult> History()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                await _signInManager.SignOutAsync();
+                return _notice.Error(this);
+            }
+
+            var model = new HistoryViewModel
+            {
+                Events = _events.GetEvents(user)
+            };
+
+            return View(model);
+        }
+
     }
 }

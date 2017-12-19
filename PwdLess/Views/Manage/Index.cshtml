@@ -1,10 +1,13 @@
-﻿@{
+﻿@using Microsoft.Extensions.Configuration;
+@{
     ViewData["Title"] = "Home";
 }
 
+@inject IConfiguration Configuration
+
 <div class="row">
     <div class="column">
-        <a asp-controller="Manage" asp-action="EditUserInfo" class="button button-outline">
+        <a asp-controller="Manage" asp-action="@nameof(ManageController.EditUserInfo)" class="button button-outline">
             <i class="fa fa-id-card-o" aria-hidden="true"></i>
             &nbsp;
             Edit your profile
@@ -13,7 +16,7 @@
 </div>
 <div class="row">
     <div class="column">
-        <a asp-controller="Manage" asp-action="Logins" class="button button-outline">
+        <a asp-controller="Manage" asp-action="@nameof(ManageController.Logins)" class="button button-outline">
             <i class="fa fa-address-book-o" aria-hidden="true"></i>&nbsp;
             Manage existing logins
         </a>
@@ -21,9 +24,20 @@
 </div>
 <div class="row">
     <div class="column">
-        <a asp-controller="Account" asp-action="Login" class="button button-outline">
+        <a asp-controller="Account" asp-action="@nameof(AccountController.Login)" class="button button-outline">
             <i class="fa fa-key" aria-hidden="true"></i>&nbsp;
             Add more login methods
         </a>
     </div>
 </div>
+@if (Int32.Parse(Configuration["PwdLess:Events:MaxStored"]) > 0)
+{
+    <div class="row">
+        <div class="column">
+            <a asp-controller="Manage" asp-action="@nameof(ManageController.History)" class="button button-outline">
+                <i class="fa fa-history" aria-hidden="true"></i>&nbsp;
+                Account history
+            </a>
+        </div>
+    </div>
+}

@@ -1,0 +1,50 @@
+﻿@model HistoryViewModel
+@{
+    ViewData["Title"] = "Account history";
+}
+
+<div class="row">
+    <div class="column">
+        <h3>Account history</h3>
+    </div>
+</div>
+
+<br />
+<div class="row">
+    <div class="column" >
+        <table style="table-layout:fixed;">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Time <small>(UTC)</small></th>
+                    <th>Description</th>
+                    <th>IP Address</th>
+                    <th>User Agent</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ev in Model.Events.OrderByDescending(e => e.OccurrenceTime))
+                 {
+                <tr>
+                    <td>
+                        <p>@ev.Type</p>
+                    </td>
+                    <td>
+                        <p>@ev.OccurrenceTime.DateTime</p>
+                    </td>
+                    <td>
+                        <pre>@ev.Subject</pre>
+                    </td>
+                    <td>
+                        <pre>@ev.ClientIPAddress</pre>
+                    </td>
+                    <td>
+                        <pre>@ev.ClientUserAgent</pre>
+                    </td>
+
+                </tr>
+                 }       
+            </tbody>
+        </table>
+    </div>
+</div>

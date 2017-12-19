@@ -22,6 +22,7 @@ namespace PwdLess.Data
 
     // Note: CRU events are sent after successful completion
     //       D events are sent just before attempt
+    // Note that once the user in deleted, all their events are deleted
     public enum AuthEventType
     {
         Register,

@@ -10,5 +10,9 @@ namespace PwdLess.Models.AccountViewModels
 
         [Display(Name = "Remember me")]
         public bool RememberMe { get; set; } = true;
+
+        public bool DidReachMaxLoginsAllowed { get; set; }
+
+        public int MaxLoginsAllowed { get; set; }
     }
 }

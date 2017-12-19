@@ -5,8 +5,6 @@
 @{
     ViewData["Title"] = "Log in";
 }
-
-
 <div class="row">
     <h3 class="column">
         @if (SignInManager.IsSignedIn(User))
@@ -24,44 +22,56 @@
     </h3>
 </div>
 
-<div class="row">
-    <form asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
-        <div asp-validation-summary="All" class="text-danger"></div>
+@if (SignInManager.IsSignedIn(User) && Model.DidReachMaxLoginsAllowed)
+{
+    <div class="row">
+        <div class="column">
+            <p class="text-warning">Sorry, you've reached the maximum number of logins  allowed (@Model.MaxLoginsAllowed).</p>
+            <a asp-controller="Manage" asp-action="@nameof(ManageController.Logins)">
+                <i class="fa fa-trash-o" aria-hidden="true"></i>&nbsp;
+                Remove a login add a new one
+            </a>
+        </div>
+    </div>
+    <br />
+}
+else
+{
+    <div class="row">
+        <form asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
+            <div asp-validation-summary="All" class="text-danger"></div>
 
-        <label asp-for="Email"></label>
-        <input asp-for="Email" />
+            <label asp-for="Email"></label>
+            <input asp-for="Email" />
 
-        @if (!SignInManager.IsSignedIn(User))
-        {
-            <div class="float-right">
-                <input asp-for="RememberMe" checked="@true" />
-                <label asp-for="RememberMe" class="label-inline">@Html.DisplayNameFor(m => m.RememberMe)</label>
-            </div>
-        }
-
-        <button class="button button-primary"
-                type="submit">
-            @if (SignInManager.IsSignedIn(User))
+            @if (!SignInManager.IsSignedIn(User))
             {
-                <span>
-                    <i class="fa fa-envelope-o" aria-hidden="true"></i>&nbsp;
-                    Add email
-                </span>
+                <div class="float-right">
+                    <input asp-for="RememberMe" checked="@true" />
+                    <label asp-for="RememberMe" class="label-inline">@Html.DisplayNameFor(m => m.RememberMe)</label>
+                </div>
             }
-            else
-            {
-                <span>
-                    <i class="fa fa-sign-in" aria-hidden="true"></i>&nbsp;
-                    Login or signup
-                </span>
-            }
-        </button>
-    </form>
-</div>
 
+            <button class="button button-primary"
+                    type="submit">
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <span>
+                        <i class="fa fa-envelope-o" aria-hidden="true"></i>&nbsp;
+                        Add email
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        <i class="fa fa-sign-in" aria-hidden="true"></i>&nbsp;
+                        Login or signup
+                    </span>
+                }
+            </button>
+        </form>
+    </div>
 
-
-@{
     var loginProviders = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
     if (loginProviders.Count == 0)
     {
@@ -109,6 +119,7 @@
 
     }
 }
+
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")

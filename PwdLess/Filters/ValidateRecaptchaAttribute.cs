@@ -26,7 +26,11 @@ namespace PwdLess.Filters
 
         private async Task ValidateReCaptcha(ActionExecutingContext context)
         {
+            var secret = _configuration["Recaptcha:Secret"];
             var gRecaptchaResponse = context.HttpContext.Request.Form[responseKey];
+
+            if (string.IsNullOrWhiteSpace(secret))
+                return;
 
             if (string.IsNullOrWhiteSpace(gRecaptchaResponse))
             {
@@ -39,7 +43,7 @@ namespace PwdLess.Filters
                 {
                     var content = new FormUrlEncodedContent(new[]
                     {
-                        new KeyValuePair<string, string>("secret", _configuration["Recaptcha:Secret"]),
+                        new KeyValuePair<string, string>("secret", secret),
                         new KeyValuePair<string, string>("response", gRecaptchaResponse)
                     });
 
