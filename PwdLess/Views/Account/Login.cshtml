@@ -38,7 +38,7 @@
 else
 {
     <div class="row">
-        <form asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
+        <form onsubmit="preventDoubleSubmission(this)" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="column">
             <div asp-validation-summary="All" class="text-danger"></div>
 
             <label asp-for="Email"></label>
@@ -53,7 +53,8 @@ else
             }
 
             <button class="button button-primary"
-                    type="submit">
+                    type="submit"
+                    name="submitEmail">
                 @if (SignInManager.IsSignedIn(User))
                 {
                     <span>
@@ -122,5 +123,16 @@ else
 
 
 @section Scripts {
+    <script>
+
+        function preventDoubleSubmission(form) {
+            form.submitEmail.innerHTML = "<i class='fa fa-spinner' aria-hidden='true'></i>&nbsp;" +
+                                            "Sending...";
+            form.submitEmail.disabled = true;
+            return true;
+        }
+
+    </script>
+
     @await Html.PartialAsync("_ValidationScriptsPartial")
 }

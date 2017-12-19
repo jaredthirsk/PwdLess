@@ -32,7 +32,7 @@ namespace PwdLess.Services
 
             var authEvent = new AuthEvent()
             {
-                ApplicationUserId = user?.Id,
+                UserId = user?.Id,
                 ClientIPAddress = _httpContext.HttpContext.Connection.RemoteIpAddress.ToString(),
                 ClientUserAgent = _httpContext.HttpContext.Request.Headers["User-Agent"].ToString(),
                 OccurrenceTime = DateTimeOffset.UtcNow,
@@ -41,7 +41,7 @@ namespace PwdLess.Services
             };
 
             // Remove oldest event if surpassing number of max events to store
-            var eventCount = _dbContext.AuthEvents.Count(e => e.ApplicationUserId == user.Id);
+            var eventCount = _dbContext.AuthEvents.Count(e => e.UserId == user.Id);
             if (eventCount == maxEventCount)
             {
                 var oldestEvent = _dbContext.AuthEvents
@@ -63,7 +63,7 @@ namespace PwdLess.Services
                 return null;
 
             return _dbContext.AuthEvents
-                .Where(e => e.ApplicationUserId == user.Id)
+                .Where(e => e.UserId == user.Id)
                 .Take(maxReturned).ToList();
         }
     }

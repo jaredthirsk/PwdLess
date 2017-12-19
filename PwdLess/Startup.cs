@@ -122,7 +122,7 @@ namespace PwdLess
             }
             else
             {
-                services.AddTransient<IEmailSender, MailKitMessageSender>();
+                services.AddScoped<IEmailSender, SmtpMessageSender>();
             }
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();

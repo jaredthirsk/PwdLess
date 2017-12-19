@@ -159,8 +159,8 @@ namespace PwdLess.Controllers
             if (userLogins.Count == 1 ||
                (userLogins.Where(l => l.LoginProvider == "Email").Count() == 1 && model.LoginProvider == "Email"))
             {
-                await _events.AddEvent(AuthEventType.Delete,
-                    JsonConvert.SerializeObject(model), user);
+                //await _events.AddEvent(AuthEventType.Delete,
+                //    JsonConvert.SerializeObject(model), user);
 
                 var deleteResult = await _userManager.DeleteAsync(user);
                 if (deleteResult.Succeeded)

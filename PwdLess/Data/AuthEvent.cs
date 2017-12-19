@@ -2,12 +2,17 @@
 
 namespace PwdLess.Data
 {
-    public class AuthEvent
+    public class AuthEvent : AuthEvent<string>
+    {
+
+    }
+
+    public class AuthEvent<TKey>
     {
         public string AuthEventId { get; set; }
 
-        public string ApplicationUserId { get; set; }
-        public ApplicationUser ApplicationUser { get; set; }
+        public TKey UserId { get; set; }
+        public ApplicationUser User { get; set; }
 
         public string ClientIPAddress { get; set; }
 
@@ -33,6 +38,6 @@ namespace PwdLess.Data
         EditUserInfo,
 
         RemoveLogin,
-        Delete
+        //Delete
     }
 }

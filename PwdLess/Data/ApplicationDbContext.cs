@@ -23,6 +23,12 @@ namespace PwdLess.Data
             builder.Entity<ApplicationUser>()
                 .HasIndex(nameof(ApplicationUser.Email))
                 .IsUnique(false);
+
+            builder.Entity<AuthEvent>()
+                .HasOne(e => e.User)
+                .WithMany(u => u.Events)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

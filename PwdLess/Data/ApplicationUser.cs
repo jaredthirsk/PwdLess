@@ -8,7 +8,7 @@ namespace PwdLess.Data
 {
     public class ApplicationUser : IdentityUser, IAdditionalUserInfo
     {
-        public IList<AuthEvent> AuthEvents { get; set; }
+        public IList<AuthEvent> Events { get; set; }
 
         public DateTimeOffset DateCreated { get; set; }
 

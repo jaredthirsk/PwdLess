@@ -169,7 +169,10 @@ namespace PwdLess.Controllers
                     Purpose = purpose
                 });
 
-            await _emailSender.SendTokenAsync(email, attemptedOperation, callbackUrl, token);
+            // Will not wait for email to be sent
+            #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            _emailSender.SendTokenAsync(email, attemptedOperation, callbackUrl, token);
+            #pragma warning restore CS4014
 
             return View(nameof(TokenInput), 
                 new TokenInputViewModel

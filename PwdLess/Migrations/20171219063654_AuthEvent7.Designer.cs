@@ -11,8 +11,8 @@ using System;
 namespace PwdLess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20171218114153_AuthEvent6")]
-    partial class AuthEvent6
+    [Migration("20171219063654_AuthEvent7")]
+    partial class AuthEvent7
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -399,7 +399,7 @@ namespace PwdLess.Migrations
             modelBuilder.Entity("PwdLess.Data.AuthEvent", b =>
                 {
                     b.HasOne("PwdLess.Data.ApplicationUser", "ApplicationUser")
-                        .WithMany("AuthEvents")
+                        .WithMany()
                         .HasForeignKey("ApplicationUserId");
                 });
 #pragma warning restore 612, 618

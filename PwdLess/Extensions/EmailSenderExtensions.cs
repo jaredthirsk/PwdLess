@@ -5,7 +5,7 @@ namespace PwdLess.Services
 {
     public static class EmailSenderExtensions
     {
-        public static Task SendTokenAsync(this IEmailSender emailSender, string email, AuthOperation messageKind, string link, string token)
+        public static async Task SendTokenAsync(this IEmailSender emailSender, string email, AuthOperation messageKind, string link, string token)
         {
             var subject = "";
             var message = "";
@@ -37,7 +37,7 @@ namespace PwdLess.Services
                     break;
             }
 
-            return emailSender.SendEmailAsync(email, subject, message);
+            await emailSender.SendEmailAsync(email, subject, message);
         }
     }
 }

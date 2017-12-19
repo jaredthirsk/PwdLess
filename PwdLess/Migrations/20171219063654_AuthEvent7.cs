@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace PwdLess.Migrations
 {
-    public partial class AuthEvent6 : Migration
+    public partial class AuthEvent7 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
