@@ -43,7 +43,6 @@ a:focus, a:hover {
     padding-top: 1%;
     padding-bottom: 1%;
     margin-top: 5%;
-    margin-bottom: 5%;
     border: 1px dashed #F3E5F5;
     border-radius: 5px;
     box-shadow: 2px 2px 50px 0px rgba(222,222,222,0.62);
@@ -59,6 +58,17 @@ a:focus, a:hover {
 
 .text-success {
     color: #009688;
+}
+
+pre {
+    border-left: 0.2rem dotted #9C27B0;
+}
+
+.footer-pad {
+    color: #9C27B0;
+    font-size: 1.2rem;
+    margin-top: 0.5%;
+    margin-bottom: 7%;
 }
 
 .fa {
