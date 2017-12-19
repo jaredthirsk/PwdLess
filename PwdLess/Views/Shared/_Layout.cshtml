@@ -31,7 +31,10 @@
     </div>
     <footer class="container footer-pad">
         <a href="@Configuration["PwdLess:AppUrl"]">@Configuration["PwdLess:AppName"]</a>
-        <em class="float-right">Powered by PwdLess</em>
+        @if (Boolean.Parse(Configuration["PwdLess:BeNice"]))
+        {
+            <em class="float-right">Powered by PwdLess</em>
+        }
     </footer>
 
     <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"
