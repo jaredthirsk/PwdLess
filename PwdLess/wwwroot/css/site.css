@@ -39,6 +39,10 @@ a:focus, a:hover {
     background-color: #D81B60;
 }
 
+.profile-picture {
+    border-radius: 50%;
+}
+
 .main {
     padding-top: 1%;
     padding-bottom: 1%;
