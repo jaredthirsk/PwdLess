@@ -40,6 +40,7 @@ a:focus, a:hover {
 }
 
 .profile-picture {
+    border: 1px dashed #F3E5F5;
     border-radius: 50%;
 }
 
