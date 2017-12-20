@@ -30,8 +30,7 @@ namespace PwdLess.Controllers
           IConfiguration configuration,
           UserManager<ApplicationUser> userManager,
           SignInManager<ApplicationUser> signInManager,
-          ILogger<ManageController> logger,
-          UrlEncoder urlEncoder)
+          ILogger<ManageController> logger)
         {
             _events = events;
             _notice = notice;
@@ -39,12 +38,6 @@ namespace PwdLess.Controllers
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
-        }
-
-        [HttpGet]
-        public IActionResult Index()
-        {
-            return View();
         }
 
         [HttpGet]
@@ -63,6 +56,7 @@ namespace PwdLess.Controllers
                 Logins = await _userManager.GetLoginsAsync(user),
                 Email = user.Email,
                 EmailConfirmed = user.EmailConfirmed,
+                FullName = user.FullName,
 
                 FavColor = user.FavColor
             };
@@ -91,7 +85,7 @@ namespace PwdLess.Controllers
                 return View(model);
 
             user.UserName = model.UserName;
-            
+            user.FullName = model.FullName;
             user.FavColor = model.FavColor; 
 
             // If the user's email is confirmed (ie. local login) and they provided a different email that exists, set it to the primary
@@ -209,7 +203,6 @@ namespace PwdLess.Controllers
             await _signInManager.RefreshSignInAsync(user);
             return _notice.Success(this, "Login successfully removed.");
         }
-
 
         [HttpGet]
         public async Task<IActionResult> History()

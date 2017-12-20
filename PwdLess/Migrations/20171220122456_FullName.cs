@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace PwdLess.Migrations
 {
-    public partial class AuthEvent7 : Migration
+    public partial class FullName : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -34,6 +34,7 @@ namespace PwdLess.Migrations
                     Email = table.Column<string>(maxLength: 256, nullable: true),
                     EmailConfirmed = table.Column<bool>(nullable: false),
                     FavColor = table.Column<string>(nullable: true),
+                    FullName = table.Column<string>(nullable: true),
                     LockoutEnabled = table.Column<bool>(nullable: false),
                     LockoutEnd = table.Column<DateTimeOffset>(nullable: true),
                     NormalizedEmail = table.Column<string>(maxLength: 256, nullable: true),
@@ -193,22 +194,22 @@ namespace PwdLess.Migrations
                 columns: table => new
                 {
                     AuthEventId = table.Column<string>(nullable: false),
-                    ApplicationUserId = table.Column<string>(nullable: true),
                     ClientIPAddress = table.Column<string>(nullable: true),
                     ClientUserAgent = table.Column<string>(nullable: true),
                     OccurrenceTime = table.Column<DateTimeOffset>(nullable: false),
                     Subject = table.Column<string>(nullable: true),
-                    Type = table.Column<int>(nullable: false)
+                    Type = table.Column<int>(nullable: false),
+                    UserId = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AuthEvents", x => x.AuthEventId);
                     table.ForeignKey(
-                        name: "FK_AuthEvents_AspNetUsers_ApplicationUserId",
-                        column: x => x.ApplicationUserId,
+                        name: "FK_AuthEvents_AspNetUsers_UserId",
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -312,9 +313,9 @@ namespace PwdLess.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AuthEvents_ApplicationUserId",
+                name: "IX_AuthEvents_UserId",
                 table: "AuthEvents",
-                column: "ApplicationUserId");
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OpenIddictApplications_ClientId",

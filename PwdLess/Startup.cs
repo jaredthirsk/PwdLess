@@ -51,6 +51,7 @@ namespace PwdLess
 
             services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
+                options.Lockout.AllowedForNewUsers = true;
                 options.User.RequireUniqueEmail = false;
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -161,18 +162,18 @@ namespace PwdLess
             // TODO refactor & make customizable
             InitializeAsync(app.ApplicationServices, CancellationToken.None).GetAwaiter().GetResult();
         }
-
-
+        
         private async Task InitializeAsync(IServiceProvider services, CancellationToken cancellationToken)
         {
+            // Add OpenIddict clients
             using (var scope = services.GetRequiredService<IServiceScopeFactory>().CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 await context.Database.EnsureCreatedAsync();
 
-                var manager = scope.ServiceProvider.GetRequiredService<OpenIddictApplicationManager<OpenIddictApplication>>();
+                var iddictManager = scope.ServiceProvider.GetRequiredService<OpenIddictApplicationManager<OpenIddictApplication>>();
 
-                if (await manager.FindByClientIdAsync("client-app", cancellationToken) == null)
+                if (await iddictManager.FindByClientIdAsync("client-app", cancellationToken) == null)
                 {
                     var descriptor = new OpenIddictApplicationDescriptor
                     {
@@ -182,7 +183,19 @@ namespace PwdLess
                         RedirectUris = { new Uri("http://localhost:8000/signin-oidc") },
                     };
 
-                    await manager.CreateAsync(descriptor, cancellationToken);
+                    await iddictManager.CreateAsync(descriptor, cancellationToken);
+                }
+
+                // Create roles
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+                string[] roleNames = { "Administrator" };
+                foreach (var roleName in roleNames)
+                {
+                    if (!await roleManager.RoleExistsAsync(roleName))
+                    {
+                        await roleManager.CreateAsync(new IdentityRole(roleName));
+                    }
                 }
             }
         }

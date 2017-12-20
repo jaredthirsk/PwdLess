@@ -1,15 +1,29 @@
 ﻿@using Microsoft.Extensions.Configuration;
+
 @{
     ViewData["Title"] = "Home";
 }
 
 @inject IConfiguration Configuration
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@if (await UserManager.IsInRoleAsync(await UserManager.GetUserAsync(User), "Administrator"))
+{
+    <div class="row">
+        <div class="column">
+            <a asp-controller="Admin" asp-action="@nameof(AdminController.Index)" class="button button-outline">
+                <i class="fa fa-sliders" aria-hidden="true"></i>&nbsp;
+                Admin portal
+            </a>
+        </div>
+    </div>
+}
 
 <div class="row">
     <div class="column">
         <a asp-controller="Manage" asp-action="@nameof(ManageController.EditUserInfo)" class="button button-outline">
-            <i class="fa fa-id-card-o" aria-hidden="true"></i>
-            &nbsp;
+            <i class="fa fa-id-card-o" aria-hidden="true"></i>&nbsp;
             Edit your profile
         </a>
     </div>

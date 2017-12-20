@@ -37,11 +37,15 @@
 
             <div asp-validation-summary="All" class="text-danger"></div>
 
+
             <label asp-for="UserName"></label>
             <input asp-for="UserName" />
 
 
             <!--foreach (var property in typeof(IAdditionalUserInfo).GetProperties(BindingFlags.Public | BindingFlags.Instance)){}-->
+
+            <label asp-for="FullName"></label>
+            <input asp-for="FullName" />
 
             <label asp-for="FavColor"></label>
             <input asp-for="FavColor" />

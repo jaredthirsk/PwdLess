@@ -159,6 +159,10 @@ namespace PwdLess.Controllers
                     break;
             }
 
+            // Add a space every 3 characters for readability
+            token = String.Concat(token.SelectMany((c, i)
+                                            => (i+1) % 3 == 0 ? $"{c} " : $"{c}"));
+
             var callbackUrl = Url.TokenInputLink(Request.Scheme,
                 new TokenInputViewModel
                 {
@@ -208,6 +212,7 @@ namespace PwdLess.Controllers
             }
 
             var email = _userManager.NormalizeKey(model.Email);
+            model.Token = model.Token.Replace(" ", "");
             
             var userWithConfirmedEmail = await _userManager.FindByLoginAsync("Email", email);
             var userCurrentlySignedIn = await _userManager.GetUserAsync(User);    
@@ -272,6 +277,7 @@ namespace PwdLess.Controllers
                     {
                         RememberMe = model.RememberMe,
                         Email = email,
+                        UserName = email.Split('@')[0]?.ToLower(),
                         Token = token,
                         ReturnUrl = model.ReturnUrl
                     });
@@ -372,6 +378,7 @@ namespace PwdLess.Controllers
 
 
             var emailFromExternalLoginProvider = _userManager.NormalizeKey(info.Principal.FindFirstValue(ClaimTypes.Email));
+            var nameFromExternalLoginProvider = _userManager.NormalizeKey(info.Principal.FindFirstValue(ClaimTypes.Name));
 
             if (userCurrentlySignedIn == null) // No locally signed-in user (trying to register or login)
             {
@@ -398,6 +405,7 @@ namespace PwdLess.Controllers
                 return View(nameof(Register), new RegisterViewModel
                 {
                     Email = emailFromExternalLoginProvider,
+                    UserName = (nameFromExternalLoginProvider?.Replace(" ","_") ?? emailFromExternalLoginProvider.Split('@')[0]).ToLower(),
                     ExternalLoginProviderDisplayName = info.ProviderDisplayName,
                     ReturnUrl = returnUrl
                 });
@@ -479,6 +487,7 @@ namespace PwdLess.Controllers
                 DateCreated = DateTimeOffset.UtcNow,
                 SecurityStamp = "",
 
+                FullName = model.FullName,
                 FavColor = model.FavColor,
             };
 
@@ -518,6 +527,12 @@ namespace PwdLess.Controllers
                 if (addLoginResult.Succeeded)
                 {
                     var user = await _userManager.FindByNameAsync(model.UserName); // This works because usernames are unique
+
+                    // If this is the first user ever created, make an Administrator
+                    if (_userManager.Users.Count() == 1)
+                    {
+                        var makeAdminResult = await _userManager.AddToRoleAsync(user, "Administrator");
+                    }
 
                     await _events.AddEvent(AuthEventType.Register, JsonConvert.SerializeObject(new
                     {

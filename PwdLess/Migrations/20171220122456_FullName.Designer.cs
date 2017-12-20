@@ -11,8 +11,8 @@ using System;
 namespace PwdLess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20171219063654_AuthEvent7")]
-    partial class AuthEvent7
+    [Migration("20171220122456_FullName")]
+    partial class FullName
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -269,6 +269,8 @@ namespace PwdLess.Migrations
 
                     b.Property<string>("FavColor");
 
+                    b.Property<string>("FullName");
+
                     b.Property<bool>("LockoutEnabled");
 
                     b.Property<DateTimeOffset?>("LockoutEnd");
@@ -312,8 +314,6 @@ namespace PwdLess.Migrations
                     b.Property<string>("AuthEventId")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("ApplicationUserId");
-
                     b.Property<string>("ClientIPAddress");
 
                     b.Property<string>("ClientUserAgent");
@@ -324,9 +324,11 @@ namespace PwdLess.Migrations
 
                     b.Property<int>("Type");
 
+                    b.Property<string>("UserId");
+
                     b.HasKey("AuthEventId");
 
-                    b.HasIndex("ApplicationUserId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("AuthEvents");
                 });
@@ -398,9 +400,10 @@ namespace PwdLess.Migrations
 
             modelBuilder.Entity("PwdLess.Data.AuthEvent", b =>
                 {
-                    b.HasOne("PwdLess.Data.ApplicationUser", "ApplicationUser")
-                        .WithMany()
-                        .HasForeignKey("ApplicationUserId");
+                    b.HasOne("PwdLess.Data.ApplicationUser", "User")
+                        .WithMany("Events")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618
         }

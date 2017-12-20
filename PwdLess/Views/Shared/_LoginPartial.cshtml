@@ -11,20 +11,21 @@
 
     var ApplicationUser = await UserManager.GetUserAsync(User);
     
-    // Calculate MD5 of email for Gravatar
-    using (var md5 = MD5.Create())
-    {
-        TempData["emailMD5"] = BitConverter.ToString(md5.ComputeHash((Encoding.ASCII.GetBytes(ApplicationUser.Email.ToLower())))).Replace("-", "").ToLower();
-    }
+    //// Calculate MD5 of email for Gravatar
+    //using (var md5 = MD5.Create())
+    //{
+    //    TempData["emailMD5"] = BitConverter.ToString(md5.ComputeHash((Encoding.ASCII.GetBytes(ApplicationUser.Email.ToLower())))).Replace("-", "").ToLower();
+    //}
 
     <div class="row">
         <form asp-area="" asp-controller="Account" asp-action="@nameof(AccountController.Logout)" method="post" id="logoutForm" class="column">
 
             <a asp-area="" asp-controller="Home" asp-action="Index" style="font-size: 2rem;">
-                <img class="profile-picture"
+                <!--<img class="profile-picture"
                      src="https://www.gravatar.com/avatar/@TempData["emailMD5"]?d=identicon&s=25"
-                     aria-hidden="true" />
-                <span style="vertical-align:text-bottom;">@ApplicationUser.UserName</span>
+                     aria-hidden="true" />-->
+                <i class="fa fa-user-circle-o" aria-hidden="true"></i>&nbsp;
+                <span>@ApplicationUser.UserName</span>
             </a>
 
 

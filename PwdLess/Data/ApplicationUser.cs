@@ -13,6 +13,9 @@ namespace PwdLess.Data
         public DateTimeOffset DateCreated { get; set; }
 
         // from IAdditionalUserInfo
+
+        public string FullName { get; set; }
+
         public string FavColor { get; set; }
     }
 }

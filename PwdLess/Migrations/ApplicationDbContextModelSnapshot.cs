@@ -268,6 +268,8 @@ namespace PwdLess.Migrations
 
                     b.Property<string>("FavColor");
 
+                    b.Property<string>("FullName");
+
                     b.Property<bool>("LockoutEnabled");
 
                     b.Property<DateTimeOffset?>("LockoutEnd");
