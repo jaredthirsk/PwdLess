@@ -200,6 +200,7 @@ namespace PwdLess.Controllers
                 return View(model);
             }
 
+            await _userManager.UpdateSecurityStampAsync(user);
             await _signInManager.RefreshSignInAsync(user);
             return _notice.Success(this, "Login successfully removed.");
         }

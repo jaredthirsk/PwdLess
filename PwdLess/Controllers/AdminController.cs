@@ -52,9 +52,9 @@ namespace PwdLess.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-
             return View(new AdminViewModel()
             {
+                Users = _context.Users.Take(10).OrderBy(u => u.DateCreated).ToList(),
                 UserCount = _userManager.Users.Count()
             });
         }
@@ -92,6 +92,7 @@ namespace PwdLess.Controllers
         {
             var user = await _userManager.FindByNameAsync(userName);
 
+            await _signInManager.SignOutAsync();
             await _signInManager.SignInAsync(user, false);
 
             return _notice.Success(this, $"You are now logged-in as {user.UserName}.", "Don't forget to log out later.");
