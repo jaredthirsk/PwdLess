@@ -13,14 +13,14 @@ namespace PwdLess.Models
     {
         [Required]
         [StringLength(15, MinimumLength = 4, ErrorMessage = "Your username should be between 4 and 15 characters in length.")]
-        [Display(Name = "Username", Description = "(unique, short, no spaces)")]
+        [Display(Name = "Username", Prompt = "unique, short, no spaces")]
         public string UserName { get; set; }
 
-        [Display(Name = "Name", Description = "(optional, full name)")]
+        [Display(Name = "Name", Prompt = "optional full name")]
         [StringLength(20, ErrorMessage = "Your name can't be more than 20 characters.")]
         public string FullName { get; set; }
 
-        [Display(Name = "Favourite Color", Description = "(optional)")]
+        [Display(Name = "Favourite Color", Prompt = "optional")]
         [MinLength(2)]
         public string FavColor { get; set; }
 

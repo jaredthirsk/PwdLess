@@ -1,0 +1,80 @@
+﻿@using Microsoft.Extensions.Configuration;
+@using Newtonsoft.Json;
+
+@model AdminViewModel
+@{
+    ViewData["Title"] = "Admin panel";
+}
+
+@inject IConfiguration Configuration
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+<div class="row">
+    <div class="column">
+        <div class="float-right">
+            <span>@Model.UserCount users</span>
+        </div>
+
+        <h3>Admin panel (beta)</h3>
+    </div>
+</div>
+
+<form method="post" class="row">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="column column-90">
+        <input asp-for="SearchTerm" placeholder="Search users..." />
+    </div>
+    <div class="column column-10">
+        <button type="submit" class="button button-clear" style="padding: 0 0 0 0;">
+            <i class="fa fa-search" aria-hidden="true"></i>
+        </button>
+    </div>
+</form>
+
+@if (Model.Users != null)
+{
+<div class="row">
+    <div class="column">
+        @if (Model.Users.Count > 0)
+        {
+         <table style="table-layout:fixed;">
+             <thead>
+                 <tr>
+                     <th>Username</th>
+                     <th>Data dump</th>
+                     <th>Actions</th>
+                 </tr>
+             </thead>
+             <tbody>
+                 @foreach (var u in Model.Users)
+                 {
+                  <tr>
+                      <td>
+                          <p>@u.UserName</p>
+                      </td>
+                      <td>
+                          <pre>@JsonConvert.SerializeObject(u)</pre>
+                      </td>
+                      <td>
+                          <a asp-controller="Admin" asp-action="@nameof(AdminController.Lockout)" asp-all-route-data="@{new Dictionary<string, string>(){ { "userName", u.UserName } }}" class="button button-clear">
+                              <i class="fa fa-ban" aria-hidden="true"></i>&nbsp;
+                              2-hr Lockout
+                          </a>
+                          <a asp-controller="Admin" asp-action="@nameof(AdminController.Impersonate)" asp-all-route-data="@{new Dictionary<string, string>(){ { "userName", u.UserName } }}" class="button button-clear">
+                              <i class="fa fa-user-secret" aria-hidden="true"></i>&nbsp;
+                              Impersonate
+                          </a>
+                      </td>
+                  </tr>
+                 }
+                 </tbody>
+             </table>
+        }
+        else
+        {
+            <p>No users <em>@Model.SearchTerm</em> found.</p>
+        }
+    </div>
+</div>
+}

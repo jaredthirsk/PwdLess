@@ -31,7 +31,7 @@
             <input asp-for="Logins" type="hidden" value="@Model.Logins" /> <!-- Doesn't actually send a list. You have to recompute. -->
 
             <label asp-for="UserName"></label>
-            <input asp-for="UserName" class="form-control" />
+            <input asp-for="UserName" />
 
             <label asp-for="Email"></label>
             @if (Model.Logins.Where(l => l.LoginProvider == "Email").Count() > 1)
@@ -62,10 +62,10 @@
             }
 
             <label asp-for="FullName"></label>
-            <input asp-for="FullName" class="form-control" />
+            <input asp-for="FullName" />
 
             <label asp-for="FavColor"></label>
-            <input asp-for="FavColor" class="form-control" />
+            <input asp-for="FavColor" />
 
             <button type="submit" class="button">
                 <i class="fa fa-hdd-o" aria-hidden="true"></i>&nbsp;
