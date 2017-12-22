@@ -44,7 +44,7 @@ namespace PwdLess
                 if (Env.IsDevelopment())
                     options.UseSqlServer(Configuration["ConnectionStrings:DefaultConnection"]);
                 else
-                    options.UseSqlServer(Configuration["ConnectionStrings:DefaultConnection"]);
+                    options.UseNpgsql(Configuration["ConnectionStrings:DefaultConnection"]);
 
                 options.UseOpenIddict();
             });
@@ -89,17 +89,10 @@ namespace PwdLess
                 }
                 else
                 {
-                    options.DisableHttpsRequirement();
-                    // Create the CspParameters object and set the key container name used to store the RSA key pair.  
-                    CspParameters cp = new CspParameters
-                    {
-                        KeyContainerName = "PwdLess1"
-                    };
-
                     // Generate a public/private key pair.  
-                    RSACryptoServiceProvider RSA = new RSACryptoServiceProvider(2048, cp);
+                    RSACryptoServiceProvider RSA = new RSACryptoServiceProvider(2048);
 
-                    // Save the public key information to an RSAParameters structure.  
+                    // Save the public/private key information to an RSAParameters structure.  
                     RSAParameters RSAKeyInfo = RSA.ExportParameters(true);
 
                     options.AddSigningKey(new RsaSecurityKey(RSAKeyInfo));
@@ -169,7 +162,6 @@ namespace PwdLess
             using (var scope = services.GetRequiredService<IServiceScopeFactory>().CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                await context.Database.EnsureCreatedAsync();
 
                 var iddictManager = scope.ServiceProvider.GetRequiredService<OpenIddictApplicationManager<OpenIddictApplication>>();
 
