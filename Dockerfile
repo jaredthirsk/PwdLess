@@ -3,6 +3,8 @@ WORKDIR ./app
 
 COPY PwdLess .
 
+COPY demo_rsa_signing_key_json /run/secrets/
+
 # BUILD LINES
 ENV ASPNETCORE_ENVIRONMENT Production
 

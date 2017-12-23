@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -9,7 +7,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PwdLess.Data;
-using PwdLess.Models;
 using PwdLess.Services;
 using System.Threading;
 using OpenIddict.Core;
@@ -20,6 +17,8 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using PwdLess.Filters;
 using Microsoft.AspNetCore.Http;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace PwdLess
 {
@@ -82,22 +81,18 @@ namespace PwdLess
                        .EnableIntrospectionEndpoint("/connect/introspect")
                        .EnableUserinfoEndpoint("/api/userinfo");
                 options.AllowImplicitFlow();
-                if (Env.IsDevelopment())
+
+                // Always disabling HTTPS requirement since it is assumed that
+                // this is running behind a reverse proxy that requires HTTPS
+                options.DisableHttpsRequirement();
+
+                if (!Env.IsDevelopment())
                 {
-                    options.DisableHttpsRequirement();
                     options.AddEphemeralSigningKey();
                 }
                 else
                 {
-                    // Generate a public/private key pair.  
-                    RSACryptoServiceProvider RSA = new RSACryptoServiceProvider(2048);
-
-                    // Save the public/private key information to an RSAParameters structure.  
-                    RSAParameters RSAKeyInfo = RSA.ExportParameters(true);
-
-                    options.AddSigningKey(new RsaSecurityKey(RSAKeyInfo));
-
-                    // TODO research X509 & RSA Keys
+                    options.AddSigningKey(new RsaSecurityKey(GetRsaSigningKey()));
                 }
                 options.UseJsonWebTokens();
             });
@@ -190,6 +185,47 @@ namespace PwdLess
                     }
                 }
             }
+        }
+        
+        public RSAParameters GetRsaSigningKey()
+        {
+            var path = Configuration["PwdLess:RsaSigningKeyJsonPath"];
+            RSAParameters parameters;
+
+            if (!String.IsNullOrWhiteSpace(path) && File.Exists(path))
+            {
+                // Get RSA JSON from file
+                string jsonString;
+                FileStream fileStream = new FileStream(path, FileMode.Open);
+                using (StreamReader reader = new StreamReader(fileStream))
+                {
+                    jsonString = reader.ReadToEnd();
+                }
+
+                dynamic paramsJson = JsonConvert.DeserializeObject(jsonString);
+
+                parameters = new RSAParameters
+                {
+                    Modulus = paramsJson.Modulus != null ? Convert.FromBase64String(paramsJson.Modulus.ToString()) : null,
+                    Exponent = paramsJson.Exponent != null ? Convert.FromBase64String(paramsJson.Exponent.ToString()) : null,
+                    P = paramsJson.P != null ? Convert.FromBase64String(paramsJson.P.ToString()) : null,
+                    Q = paramsJson.Q != null ? Convert.FromBase64String(paramsJson.Q.ToString()) : null,
+                    DP = paramsJson.DP != null ? Convert.FromBase64String(paramsJson.DP.ToString()) : null,
+                    DQ = paramsJson.DQ != null ? Convert.FromBase64String(paramsJson.DQ.ToString()) : null,
+                    InverseQ = paramsJson.InverseQ != null ? Convert.FromBase64String(paramsJson.InverseQ.ToString()) : null,
+                    D = paramsJson.D != null ? Convert.FromBase64String(paramsJson.D.ToString()) : null
+                };
+
+            }
+            else
+            {
+                // Generate RSA key
+                RSACryptoServiceProvider RSA = new RSACryptoServiceProvider(2048);
+
+                parameters = RSA.ExportParameters(true);
+            }
+
+            return parameters;
         }
     }
 }

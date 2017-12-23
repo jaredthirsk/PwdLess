@@ -110,6 +110,8 @@ namespace PwdLess.Controllers
                 OpenIddictConstants.Scopes.Roles
             }.Intersect(request.GetScopes()));
 
+            ticket.SetResources(_configuration["PwdLess:Audience"]);
+
             // Note: by default, claims are NOT automatically included in the access and identity tokens.
             // To allow OpenIddict to serialize them, you must attach them a destination, that specifies
             // whether they should be included in access tokens, in identity tokens or in both.
