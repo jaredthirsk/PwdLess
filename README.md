@@ -1,5 +1,3 @@
-(For a more complete framework, check out [Cierge](https://github.com/pwdless/cierge).)
-
 # PwdLess
 PwdLess is a free, open-source authentication server that allows you to register/login users without a password. This is achieved by sending a "magic link" containing a nonce, possibly in the form of a URL. Once the user opens the link (or manually types the nonce into your app), a JWT is generated for the user, authenticating their identity. PwdLess operates without a database (cache only) and only requires simple configuration to run. This makes it platform-agnostic so you can easily integrate it into any tech-stack.
 
