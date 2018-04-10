@@ -29,8 +29,11 @@ namespace PwdLess.Services
             var body = _config[$"PwdLess:EmailContents:Body:{type}"]
                 .Replace("{{nonce}}", nonce);
 
-            foreach (var kvPair in JsonConvert.DeserializeObject<Dictionary<string, string>>(extraBodyData))
-                body = body.Replace($"{{{kvPair.Key}}}", kvPair.Value);
+            if (!string.IsNullOrWhiteSpace(extraBodyData))
+            {
+                foreach (var kvPair in JsonConvert.DeserializeObject<Dictionary<string, string>>(extraBodyData))
+                    body = body.Replace($"{{{kvPair.Key}}}", kvPair.Value);
+            }
 
             return body;
         }
