@@ -12,6 +12,7 @@ using PwdLess.Services;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using AspNetCoreRateLimit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace PwdLess
 {
@@ -22,7 +23,7 @@ namespace PwdLess
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                //.AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
 
             Configuration = builder.Build();
@@ -47,6 +48,35 @@ namespace PwdLess
             services.AddSingleton<IIpPolicyStore, DistributedCacheIpPolicyStore>();
             services.AddSingleton<IRateLimitCounterStore, DistributedCacheRateLimitCounterStore>();
 
+            #region Optional JWT Validation feature
+
+            var tokenSecretKey = Encoding.UTF8.GetBytes(Configuration["PwdLess:Jwt:SecretKey"]);
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                RequireSignedTokens = true,
+                IssuerSigningKey = new SymmetricSecurityKey(tokenSecretKey),
+                ValidateIssuer = true,
+                ValidIssuer = Configuration["PwdLess:Jwt:Issuer"],
+                ValidateAudience = true,
+                ValidAudience = Configuration["PwdLess:Jwt:Audience"],
+                ValidateLifetime = true,
+                RequireExpirationTime = true,
+                ClockSkew = new TimeSpan(0, 5, 0),
+                ValidateActor = false,
+            };
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+            {
+                options.Audience = Configuration["PwdLess:Jwt:Audience"];
+                options.ClaimsIssuer = Configuration["PwdLess:Jwt:Issuer"];
+                options.TokenValidationParameters = tokenValidationParameters;
+            });
+
+            #endregion
+
             // framework services
             services.AddMvc();
         }
@@ -64,30 +94,7 @@ namespace PwdLess
 
             app.UseIpRateLimiting();
 
-            #region Optional JWT Validation feature
-            var tokenSecretKey = Encoding.UTF8.GetBytes(Configuration["PwdLess:Jwt:SecretKey"]);
-
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                RequireSignedTokens = true,
-                IssuerSigningKey = new SymmetricSecurityKey(tokenSecretKey),
-                ValidateIssuer = true,
-                ValidIssuer = Configuration["PwdLess:Jwt:Issuer"],
-                ValidateAudience = true,
-                ValidAudience = Configuration["PwdLess:Jwt:Audience"],
-                ValidateLifetime = true,
-                RequireExpirationTime = true,
-                ClockSkew = new TimeSpan(0, 5, 0),
-                ValidateActor = false,
-            };
- 
-            app.UseJwtBearerAuthentication(new JwtBearerOptions
-            {
-                AutomaticAuthenticate = true,
-                TokenValidationParameters = tokenValidationParameters,
-            });
-            #endregion
+            app.UseAuthentication();
 
             app.UseMvc();
         }
